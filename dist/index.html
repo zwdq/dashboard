@@ -365,7 +365,7 @@ function render(d) {
     <div class="metric"><span class="metric-label">❌ Workers 错误</span><span class="metric-value ${(a.workersErrors||0) > 0 ? 'err' : 'ok'}">${a.workersErrors || 0}</span></div>
   </div>`;
 
-  // 魔兽世界月卡到期
+  // 到期监控卡片（魔兽月卡 + 皮皮虾AI中转）
   const wowExpire = new Date("2026-08-18T11:00:00");
   const wowNow = new Date();
   const wowDaysLeft = Math.max(0, Math.floor((wowExpire - wowNow) / (1000 * 60 * 60 * 24)));
@@ -376,13 +376,35 @@ function render(d) {
   const wowPct = Math.max(0, Math.min(Math.round(wowElapsed / wowTotal * 100), 100));
   const wowActive = wowDaysLeft > 0;
 
+  // 皮皮虾AI中转
+  const ppExpire = new Date("2026-08-12T08:56:41");
+  const ppDaysLeft = Math.max(0, Math.floor((ppExpire - wowNow) / (1000 * 60 * 60 * 24)));
+  const ppHoursLeft = Math.floor(((ppExpire - wowNow) % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const ppStart = new Date("2026-07-12T08:56:41");
+  const ppTotal = Math.floor((ppExpire - ppStart) / (1000 * 60 * 60 * 24));
+  const ppElapsed = Math.floor((wowNow - ppStart) / (1000 * 60 * 60 * 24));
+  const ppPct = Math.max(0, Math.min(Math.round(ppElapsed / ppTotal * 100), 100));
+  const ppActive = ppDaysLeft > 0;
+
   midHtml += `<div class="mid-card">
-    <div class="mid-card-title">⚔️ 魔兽世界月卡 ${wowActive ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</div>
-    <div class="metric"><span class="metric-label">📅 状态</span><span class="metric-value ${wowActive ? 'ok' : 'err'}">${wowActive ? '激活中' : '已到期'}</span></div>
-    <div style="margin-top:10px">
-      <div class="metric-label" style="margin-bottom:4px">⏰ 剩余时间 <span style="float:right;color:var(--accent)">${wowDaysLeft} 天 ${wowHoursLeft} 小时</span></div>
+    <div class="mid-card-title">⏰ 到期监控</div>
+    
+    <div style="margin-bottom:14px">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
+        <span class="metric-label">⚔️ 魔兽世界月卡 ${wowActive ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</span>
+        <span style="font-size:12px; color:var(--accent)">${wowDaysLeft} 天 ${wowHoursLeft} 小时</span>
+      </div>
       <div class="srv-bar"><div class="srv-bar-fill ${wowPct > 85 ? 'err' : wowPct > 70 ? 'warn' : 'ok'}" style="width:${wowPct}%"></div></div>
-      <div class="srv-bar-label"><span>7/18 开始</span><span>${wowPct}% 已用</span><span>8/18 到期</span></div>
+      <div class="srv-bar-label"><span>7/18</span><span>${wowPct}% 已用</span><span>8/18</span></div>
+    </div>
+
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
+        <span class="metric-label">🦐 皮皮虾AI中转 ${ppActive ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</span>
+        <span style="font-size:12px; color:var(--accent)">${ppDaysLeft} 天 ${ppHoursLeft} 小时</span>
+      </div>
+      <div class="srv-bar"><div class="srv-bar-fill ${ppPct > 85 ? 'err' : ppPct > 70 ? 'warn' : 'ok'}" style="width:${ppPct}%"></div></div>
+      <div class="srv-bar-label"><span>7/12</span><span>${ppPct}% 已用</span><span>8/12</span></div>
     </div>
   </div>`;
 
