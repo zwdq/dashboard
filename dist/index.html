@@ -288,44 +288,28 @@ function render(d) {
   const weather = d.weather;
   if (weather && !weather.error) {
     const rainWarn = (weather.rainProbability || 0) > 60;
-    midHtml += `<div class="mid-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, var(--card), var(--card-hover));">
-      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
-        <div>
-          <div style="font-size:28px; font-weight:700;">${weather.weatherText}</div>
-          <div style="font-size:13px; color:var(--muted); margin-top:2px">📍 ${weather.location}</div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-size:36px; font-weight:800; color:var(--accent)">${weather.temp}°</div>
-          <div style="font-size:12px; color:var(--muted)">${weather.tempMin}° ~ ${weather.tempMax}°</div>
-        </div>
-        <div style="display:flex; gap:16px; font-size:12px; color:var(--muted)">
-          <div style="text-align:center"><div style="font-size:18px">💧</div>${weather.humidity}%</div>
-          <div style="text-align:center"><div style="font-size:18px">🌬️</div>${weather.windSpeed}km/h</div>
-          <div style="text-align:center"><div style="font-size:18px">${rainWarn ? '🌧️' : '☂️'}</div><span style="color:${rainWarn ? 'var(--warn)' : 'var(--accent)'}">${weather.rainProbability}%</span></div>
-        </div>
-      </div>`;
-    // 7天预报
+    let foreHtml = "";
     if (weather.forecast && weather.forecast.length) {
-      const dayNames = ["今天","明天","后天","大后天","4天后","5天后","6天后"];
-      midHtml += `<div style="display:flex; gap:6px; overflow-x:auto; padding-top:10px; border-top:1px solid var(--border);">`;
-      for (let i = 0; i < weather.forecast.length; i++) {
-        const f = weather.forecast[i];
-        const d = new Date(f.date);
-        const weekday = ["日","一","二","三","四","五","六"][d.getDay()];
-        const rProb = f.rainProb || 0;
-        const rColor = rProb > 60 ? 'var(--warn)' : rProb > 30 ? 'var(--muted)' : 'var(--accent)';
-        midHtml += `<div style="flex-shrink:0; text-align:center; padding:6px 8px; border-radius:8px; min-width:52px;${i===0?' background:var(--accent-soft);':''}">
-          <div style="font-size:11px; color:var(--muted)">${dayNames[i] || f.date.slice(5)}</div>
-          <div style="font-size:11px; color:var(--muted); margin-bottom:2px">周${weekday}</div>
-          <div style="font-size:18px; margin:2px 0">${f.weatherText.split(' ')[0]}</div>
-          <div style="font-size:12px; font-weight:600">${f.tempMax}°</div>
-          <div style="font-size:11px; color:var(--muted)">${f.tempMin}°</div>
-          <div style="font-size:11px; color:${rColor}; margin-top:2px">${rProb > 0 ? '🌧'+rProb+'%' : '—'}</div>
-        </div>`;
-      }
-      midHtml += `</div>`;
+      const dayNames = ["今","明","后","大后","4","5","6"];
+      foreHtml = weather.forecast.slice(0, 5).map((f, i) => {
+        const r = f.rainProb || 0;
+        return `<span style="font-size:11px;color:var(--muted)">${dayNames[i]} ${f.weatherText.split(" ")[0]} ${f.tempMax}°${r>50?' 🌧'+r+'%':''}</span>`;
+      }).join(' · ');
     }
-    midHtml += `</div>`;
+    midHtml += `<div class="mid-card" style="grid-column: 1 / -1;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:nowrap;">
+        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+          <span style="font-size:22px">${weather.weatherText.split(" ")[0]}</span>
+          <span style="font-size:28px;font-weight:800;color:var(--accent)">${weather.temp}°</span>
+          <span style="font-size:11px;color:var(--muted)">${weather.tempMin}~${weather.tempMax}°</span>
+        </div>
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--muted);flex-shrink:0;">
+          <span>💧${weather.humidity}%</span>
+          <span style="color:${rainWarn?'var(--warn)':'var(--accent)'}">🌧${weather.rainProbability}%</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${foreHtml}</div>
+      </div>
+    </div>`;
   }
 
   // CF 资源 — u 现在就是 analytics 本身
