@@ -49,7 +49,7 @@ function getExternalSites() {
   return [
     {
       name: "qdii-quota",
-      subdomain: "https://zwdq.github.io/qdii-quota/",
+      subdomain: "https://zwdq.github.io/qdii-quota/fund-quota.html",
       domains: [],
       created: null,
       modified: null,
