@@ -296,19 +296,29 @@ function render(d) {
         return `<span style="font-size:11px;color:var(--muted)">${wd} ${f.weatherText.split(" ")[0]} ${f.tempMax}°${r>50?' 🌧'+r+'%':''}</span>`;
       }).join(' · ');
     }
-    midHtml += `<div class="mid-card" style="grid-column: 1 / -1; padding: 20px 16px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:nowrap; margin-bottom:10px;">
+    midHtml += `<div class="mid-card" style="grid-column: 1 / -1; padding: 16px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
         <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
           <span style="font-size:28px">${weather.weatherText.split(" ")[0]}</span>
-          <span style="font-size:36px;font-weight:800;color:var(--accent)">${weather.temp}°</span>
-          <span style="font-size:12px;color:var(--muted)">${weather.tempMin}~${weather.tempMax}°</span>
+          <div>
+            <div style="font-size:32px;font-weight:800;color:var(--accent);line-height:1">${weather.temp}°</div>
+            <div style="font-size:11px;color:var(--muted)">${weather.tempMin}~${weather.tempMax}° · 💧${weather.humidity}% · <span style="color:${rainWarn?'var(--warn)':'var(--accent)'}">🌧${weather.rainProbability}%</span></div>
+          </div>
         </div>
-        <div style="display:flex;gap:16px;font-size:12px;color:var(--muted);flex-shrink:0;">
-          <span>💧${weather.humidity}%</span>
-          <span style="color:${rainWarn?'var(--warn)':'var(--accent)'}">🌧${weather.rainProbability}%</span>
+        <div style="display:flex;gap:4px;flex-shrink:0;">
+          ${weather.forecast ? weather.forecast.slice(0,5).map((f,i) => {
+            const r = f.rainProb || 0;
+            const wd = ["日","一","二","三","四","五","六"][new Date(f.date).getDay()];
+            return `<div style="text-align:center;padding:4px 6px;min-width:44px;${i===0?'background:var(--accent-soft);border-radius:6px':''}">
+              <div style="font-size:10px;color:var(--muted)">周${wd}</div>
+              <div style="font-size:16px;margin:2px 0">${f.weatherText.split(" ")[0]}</div>
+              <div style="font-size:11px;font-weight:600">${f.tempMax}°</div>
+              <div style="font-size:10px;color:var(--muted)">${f.tempMin}°</div>
+              ${r>50?`<div style="font-size:10px;color:var(--warn)">🌧${r}%</div>`:''}
+            </div>`;
+          }).join('') : ''}
         </div>
       </div>
-      <div style="font-size:11px;color:var(--muted);line-height:1.6;">${foreHtml}</div>
     </div>`;
   }
 
