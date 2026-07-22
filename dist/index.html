@@ -46,7 +46,7 @@ body {
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 
 /* 三列看板 */
-.board { display: grid; grid-template-columns: 280px 1fr 320px; gap: 16px; padding: 16px; flex: 1; overflow: hidden; }
+.board { display: grid; grid-template-columns: 340px 1fr 300px; gap: 16px; padding: 16px; flex: 1; overflow: hidden; }
 .col { display: flex; flex-direction: column; overflow: hidden; }
 .col-header { display: flex; align-items: center; gap: 8px; padding: 0 4px 12px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; flex-shrink: 0; }
 .col-header .badge { background: var(--accent-soft); color: var(--accent); padding: 1px 8px; border-radius: 10px; font-size: 11px; }
@@ -220,7 +220,6 @@ function render(d) {
       <div class="proj-icon">${ok === true ? '🟢' : ok === false ? '🔴' : '⚪️'}</div>
       <div class="proj-name">${esc(p.name)}</div>
       <div class="proj-cn">${esc(CN_NAMES[p.name] || '')}</div>
-      <a class="proj-url" href="${url}" onclick="event.stopPropagation()" target="_blank">${url.replace('https://','')}</a>
       <div class="proj-stats">
         ${ms !== null ? `<span>⚡ ${ms}ms</span>` : ''}
         <span>📦 ${p.deployments || 0}</span>
@@ -379,7 +378,7 @@ if (token) {
   document.getElementById("themeBtn").textContent = (localStorage.getItem("dash_theme")||"dark") === "light" ? "🌙" : "☀️";
   loadData();
   // 自动刷新（静默，不闪白屏）
-  setInterval(() => { if (token) loadData(true); }, 60000);
+  setInterval(() => { if (token) loadData(true); }, 300000);
 }
 </script>
 </body>
