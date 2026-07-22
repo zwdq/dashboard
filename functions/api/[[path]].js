@@ -220,6 +220,50 @@ async function getKimiBalance(env) {
   }
 }
 
+// ── 天气 ──
+const WEATHER_CODES = {
+  0: "☀️ 晴", 1: "🌤️ 多云", 2: "⛅ 阴", 3: "☁️ 阴",
+  45: "🌫️ 雾", 48: "🌫️ 冻雾",
+  51: "🌦️ 小毛毛雨", 53: "🌦️ 毛毛雨", 55: "🌧️ 大毛毛雨",
+  56: "🌧️ 冻毛毛雨", 57: "🌧️ 冻雨",
+  61: "🌧️ 小雨", 63: "🌧️ 中雨", 65: "🌧️ 大雨",
+  66: "🌧️ 冻雨", 67: "🌧️ 大冻雨",
+  71: "🌨️ 小雪", 73: "🌨️ 中雪", 75: "❄️ 大雪",
+  77: "🌨️ 雪粒",
+  80: "🌧️ 阵雨", 81: "🌧️ 中阵雨", 82: "⛈️ 大阵雨",
+  85: "🌨️ 阵雪", 86: "❄️ 大阵雪",
+  95: "⛈️ 雷暴", 96: "⛈️ 雷暴+冰雹", 99: "⛈️ 大雷暴+冰雹",
+};
+
+async function getWeather() {
+  try {
+    const r = await fetch(
+      "https://api.open-meteo.com/v1/forecast?latitude=39.9042&longitude=116.4074&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Asia/Shanghai",
+      { signal: AbortSignal.timeout(4000) }
+    );
+    const d = await r.json();
+    const c = d.current || {};
+    const daily = d.daily || {};
+    const code = c.weather_code ?? 0;
+    return {
+      temp: c.temperature_2m,
+      humidity: c.relative_humidity_2m,
+      windSpeed: c.wind_speed_10m,
+      precipitation: c.precipitation,
+      weatherCode: code,
+      weatherText: WEATHER_CODES[code] || "❓ 未知",
+      tempMax: (daily.temperature_2m_max || [null])[0],
+      tempMin: (daily.temperature_2m_min || [null])[0],
+      rainProbability: (daily.precipitation_probability_max || [null])[0],
+      dailyCode: (daily.weather_code || [null])[0],
+      dailyText: WEATHER_CODES[(daily.weather_code || [0])[0]] || "❓",
+      location: "北京西城区",
+    };
+  } catch (e) {
+    return { error: "天气获取失败", location: "北京西城区" };
+  }
+}
+
 // ── 健康检查 ──
 async function checkHealth(url) {
   try {
@@ -258,12 +302,13 @@ export async function onRequest(context) {
         return json({ success: true, data, cached: true });
       }
 
-      const [pages, usage, tencent, aliyun, kimi] = await Promise.all([
+      const [pages, usage, tencent, aliyun, kimi, weather] = await Promise.all([
         getCFPages(env),
         getCFUsage(env),
         getTencentLighthouse(env),
         getAliyunECS(),
         getKimiBalance(env),
+        getWeather(),
       ]);
 
       // 健康检查每个 Pages 项目（并行）
@@ -282,6 +327,7 @@ export async function onRequest(context) {
         tencent,
         aliyun,
         kimi,
+        weather,
         timestamp: new Date().toISOString(),
       };
 
