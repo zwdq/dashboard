@@ -206,7 +206,6 @@ function render(d) {
   const u = d.cfUsage || {};
   const tc = d.tencent;
   const aliyun = d.aliyun;
-  const glm = d.glm;
   const kimi = d.kimi;
 
   // === 左列：CF Pages 项目 ===
@@ -268,19 +267,6 @@ function render(d) {
     <div class="metric"><span class="metric-label">📊 总行数(读+写)</span><span class="metric-value">${d1Total.toLocaleString()} / ${d1Limit.toLocaleString()} (${d1Pct}%)</span></div>
     <div class="metric"><span class="metric-label">❌ Workers 错误</span><span class="metric-value ${(a.workersErrors||0) > 0 ? 'err' : 'ok'}">${a.workersErrors || 0}</span></div>
   </div>`;
-
-  // GLM
-  if (glm && glm.configured) {
-    midHtml += `<div class="mid-card">
-      <div class="mid-card-title">🤖 智谱 GLM ${glm.status === 'ok' ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</div>
-      <div class="metric"><span class="metric-label">状态</span><span class="metric-value ${glm.status === 'ok' ? 'ok' : 'err'}">${glm.status === 'ok' ? '正常' : '异常'}</span></div>
-      <div class="metric"><span class="metric-label">模型数</span><span class="metric-value">${(glm.models || []).length}</span></div>
-      <div class="metric"><span class="metric-label">免费模型</span><span class="metric-value ok">GLM-4-Flash</span></div>`;
-    if (glm.models) {
-      midHtml += `<div class="model-tags">${glm.models.map(m => `<span class="model-tag">${m}</span>`).join('')}</div>`;
-    }
-    midHtml += `</div>`;
-  }
 
   // Kimi
   if (kimi && kimi.configured) {

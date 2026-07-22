@@ -244,12 +244,11 @@ export async function onRequest(context) {
   try {
     // GET /api/status — 全量状态
     if (path === "/status" && request.method === "GET") {
-      const [pages, usage, tencent, aliyun, glm, kimi] = await Promise.all([
+      const [pages, usage, tencent, aliyun, kimi] = await Promise.all([
         getCFPages(env),
         getCFUsage(env),
         getTencentLighthouse(env),
         getAliyunECS(),
-        getGLMBalance(env),
         getKimiBalance(env),
       ]);
 
@@ -270,7 +269,6 @@ export async function onRequest(context) {
           cfUsage: usage,
           tencent,
           aliyun,
-          glm,
           kimi,
           timestamp: new Date().toISOString(),
         },
