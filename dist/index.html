@@ -286,77 +286,58 @@ function render(d) {
   midHtml += `</div>`;
 
   // === 右列：服务器 ===
+  const servers = [tc, aliyun].filter(s => s && s.configured).map(normalizeServer);
   let rightHtml = "";
-
-  // 腾讯云
-  if (tc && tc.configured) {
-    const expireDate = new Date("2028-06-12");
-    const now = new Date();
-    const daysLeft = Math.floor((expireDate - now) / (1000 * 60 * 60 * 24));
-    const totalDays = Math.floor((expireDate - new Date("2024-06-12")) / (1000 * 60 * 60 * 24));
-    const expirePercent = Math.round((1 - daysLeft / totalDays) * 100);
-
+  for (const s of servers) {
+    if (!s) continue;
+    const providerIcon = s.provider === "tencent" ? "☁️" : "🏔️";
+    const providerName = s.provider === "tencent" ? "腾讯云轻量" : "阿里云 ECS";
     rightHtml += `<div class="card srv-card ok">
       <div class="srv-status">
         <span class="dot ok"></span>
-        <span class="srv-name">腾讯云轻量</span>
+        <span class="srv-name">${providerIcon} ${providerName}</span>
       </div>
-      <div class="metric"><span class="metric-label">📍 区域</span><span class="metric-value">北京</span></div>
-      <div class="metric"><span class="metric-label">🌐 IP</span><span class="metric-value" style="font-size:11px">152.136.152.43</span></div>
-      <div class="metric"><span class="metric-label">💻 配置</span><span class="metric-value">2核 4GB</span></div>
-      <div class="metric"><span class="metric-label">💿 系统</span><span class="metric-value" style="font-size:11px">Ubuntu 22.04</span></div>
-      <div style="margin-top:12px">
-        <div class="metric-label" style="margin-bottom:4px">⏰ 到期时间</div>
-        <div class="srv-bar"><div class="srv-bar-fill ${expirePercent > 80 ? 'warn' : 'ok'}" style="width:${expirePercent}%"></div></div>
-        <div class="srv-bar-label"><span>2024</span><span style="color:var(--accent)">${daysLeft} 天</span><span>2028</span></div>
-      </div>
-      <div class="metric"><span class="metric-label">📸 快照</span><span class="metric-value warn">2/2 已满</span></div>
-      <div class="metric"><span class="metric-label">🔒 防火墙</span><span class="metric-value ok">6 条规则</span></div>
-    </div>`;
-  }
+      <div class="metric"><span class="metric-label">🏷️ 名称</span><span class="metric-value">${esc(s.name)}</span></div>
+      <div class="metric"><span class="metric-label">📍 区域</span><span class="metric-value">${esc(s.regionName)}</span></div>
+      <div class="metric"><span class="metric-label">🌐 公网IP</span><span class="metric-value" style="font-size:11px">${esc(s.ip)}</span></div>
+      <div class="metric"><span class="metric-label">🏠 内网IP</span><span class="metric-value" style="font-size:11px">${esc(s.privateIp)}</span></div>
+      <div class="metric"><span class="metric-label">💻 配置</span><span class="metric-value">${s.cpu}核 ${s.memory}GB</span></div>
+      <div class="metric"><span class="metric-label">💿 系统</span><span class="metric-value" style="font-size:11px">${esc(s.os)}</span></div>
+      <div class="metric"><span class="metric-label">💾 磁盘</span><span class="metric-value" style="font-size:11px">${esc(s.disk)}</span></div>
+      <div class="metric"><span class="metric-label">📡 带宽</span><span class="metric-value">${esc(s.bandwidth)}</span></div>`;
 
-  // 阿里云 ECS
-  if (aliyun && aliyun.configured) {
-    const expireDate = new Date(aliyun.expireDate);
-    const now = new Date();
-    const daysLeft = Math.floor((expireDate - now) / (1000 * 60 * 60 * 24));
-    const totalDays = Math.floor((expireDate - new Date(aliyun.created)) / (1000 * 60 * 60 * 24));
-    const expirePercent = Math.round((1 - daysLeft / totalDays) * 100);
-
-    rightHtml += `<div class="card srv-card ok">
-      <div class="srv-status">
-        <span class="dot ok"></span>
-        <span class="srv-name">阿里云 ECS</span>
-      </div>
-      <div class="metric"><span class="metric-label">🏷️ 名称</span><span class="metric-value">${esc(aliyun.name)}</span></div>
-      <div class="metric"><span class="metric-label">📍 区域</span><span class="metric-value">${esc(aliyun.regionName)}</span></div>
-      <div class="metric"><span class="metric-label">🌐 IP</span><span class="metric-value" style="font-size:11px">${esc(aliyun.ip)}</span></div>
-      <div class="metric"><span class="metric-label">💻 配置</span><span class="metric-value">${aliyun.cpu}核 ${aliyun.memory}GB</span></div>
-      <div class="metric"><span class="metric-label">💿 系统</span><span class="metric-value" style="font-size:11px">${esc(aliyun.os)}</span></div>
-      <div class="metric"><span class="metric-label">📡 带宽</span><span class="metric-value">${esc(aliyun.bandwidth)}</span></div>
-      <div class="metric"><span class="metric-label">💾 系统盘</span><span class="metric-value" style="font-size:11px">${esc(aliyun.disk)}</span></div>`;
-
-    if (aliyun.cpuUsage !== null) {
+    // CPU/内存使用率
+    if (s.cpuUsage !== null) {
       rightHtml += `<div style="margin-top:8px">
         <div class="metric-label" style="margin-bottom:2px">📊 CPU 使用率</div>
-        <div class="srv-bar"><div class="srv-bar-fill ${aliyun.cpuUsage > 80 ? 'err' : aliyun.cpuUsage > 60 ? 'warn' : 'ok'}" style="width:${aliyun.cpuUsage}%"></div></div>
-        <div class="srv-bar-label"><span></span><span>${aliyun.cpuUsage}%</span></div>
+        <div class="srv-bar"><div class="srv-bar-fill ${s.cpuUsage > 80 ? 'err' : s.cpuUsage > 60 ? 'warn' : 'ok'}" style="width:${s.cpuUsage}%"></div></div>
+        <div class="srv-bar-label"><span></span><span>${s.cpuUsage}%</span></div>
       </div>`;
-      if (aliyun.memUsage !== null) {
+      if (s.memUsage !== null) {
         rightHtml += `<div style="margin-top:6px">
           <div class="metric-label" style="margin-bottom:2px">📊 内存使用率</div>
-          <div class="srv-bar"><div class="srv-bar-fill ${aliyun.memUsage > 80 ? 'err' : aliyun.memUsage > 60 ? 'warn' : 'ok'}" style="width:${aliyun.memUsage}%"></div></div>
-          <div class="srv-bar-label"><span></span><span>${aliyun.memUsage}%</span></div>
+          <div class="srv-bar"><div class="srv-bar-fill ${s.memUsage > 80 ? 'err' : s.memUsage > 60 ? 'warn' : 'ok'}" style="width:${s.memUsage}%"></div></div>
+          <div class="srv-bar-label"><span></span><span>${s.memUsage}%</span></div>
         </div>`;
       }
     } else {
-      rightHtml += `<div class="metric"><span class="metric-label">📊 CPU/内存</span><span class="metric-value warn">需配置 AK/SK</span></div>`;
+      rightHtml += `<div class="metric"><span class="metric-label">📊 CPU/内存</span><span class="metric-value warn">暂无监控</span></div>`;
     }
 
+    // 快照 / 防火墙（如果有）
+    if (s.snapshot) {
+      const snapWarn = s.snapshot.includes("2/2");
+      rightHtml += `<div class="metric"><span class="metric-label">📸 快照</span><span class="metric-value ${snapWarn ? 'warn' : 'ok'}">${esc(s.snapshot)}</span></div>`;
+    }
+    if (s.firewall) {
+      rightHtml += `<div class="metric"><span class="metric-label">🔒 防火墙</span><span class="metric-value ok">${esc(s.firewall)}</span></div>`;
+    }
+
+    // 到期进度条
     rightHtml += `<div style="margin-top:8px">
       <div class="metric-label" style="margin-bottom:4px">⏰ 到期时间</div>
-      <div class="srv-bar"><div class="srv-bar-fill ${expirePercent > 80 ? 'warn' : 'ok'}" style="width:${expirePercent}%"></div></div>
-      <div class="srv-bar-label"><span>${aliyun.created}</span><span style="color:var(--accent)">${daysLeft} 天</span><span>${aliyun.expireDate.slice(0,4)}</span></div>
+      <div class="srv-bar"><div class="srv-bar-fill ${s.expirePercent > 80 ? 'warn' : 'ok'}" style="width:${s.expirePercent}%"></div></div>
+      <div class="srv-bar-label"><span>${s.created.slice(0,4)}</span><span style="color:var(--accent)">${s.daysLeft} 天剩余</span><span>${s.expireDate.slice(0,4)}</span></div>
     </div>
     </div>`;
   }
@@ -379,6 +360,16 @@ function render(d) {
 }
 
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function normalizeServer(s) {
+  if (!s || !s.configured) return null;
+  const expireDate = new Date(s.expireDate);
+  const now = new Date();
+  const daysLeft = Math.floor((expireDate - now) / (1000 * 60 * 60 * 24));
+  const totalDays = Math.floor((expireDate - new Date(s.created)) / (1000 * 60 * 60 * 24));
+  const expirePercent = Math.round((1 - daysLeft / totalDays) * 100);
+  return Object.assign({}, s, { daysLeft, expirePercent });
+}
 
 // 主题
 function toggleTheme() {

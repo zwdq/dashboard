@@ -75,13 +75,36 @@ async function getTencentLighthouse(env) {
   const sid = env.TENCENT_SECRET_ID;
   const skey = env.TENCENT_SECRET_KEY;
   if (!sid || !skey) return null;
-  return { configured: true, region: "ap-beijing" };
+  return {
+    configured: true,
+    provider: "tencent",
+    name: "Ubuntu22.04-Docker26",
+    instanceId: "lhins-odq5natg",
+    region: "ap-beijing",
+    regionName: "北京",
+    ip: "152.136.152.43",
+    privateIp: "10.2.20.9",
+    cpu: 2,
+    memory: 4,
+    os: "Ubuntu 22.04 LTS",
+    bandwidth: "—",
+    expireDate: "2028-06-12",
+    created: "2024-06-12",
+    disk: "70 GB SSD",
+    diskSize: 70,
+    cpuUsage: null,
+    memUsage: null,
+    snapshot: "2/2",
+    firewall: "6 条规则",
+    note: "需要调腾讯云 API 获取实时监控",
+  };
 }
 
 // ── 阿里云 ECS ──
 function getAliyunECS() {
   return {
     configured: true,
+    provider: "aliyun",
     name: "zsqypc",
     instanceId: "i-2ze79b6r8gddzl3h7sy4",
     region: "cn-beijing",
@@ -96,11 +119,23 @@ function getAliyunECS() {
     created: "2024-01-01",
     disk: "ESSD Entry 40GB",
     diskSize: 40,
-    // CPU 和内存使用率需要阿里云 AK/SK 才能动态获取
     cpuUsage: null,
     memUsage: null,
-    note: "需要阿里云 AK/SK 才能获取实时监控数据",
+    snapshot: null,
+    firewall: null,
+    note: "需要阿里云 AK/SK 获取实时监控",
   };
+}
+
+// ── 统一渲染服务器卡片数据 ──
+function normalizeServer(s) {
+  if (!s || !s.configured) return null;
+  const expireDate = new Date(s.expireDate);
+  const now = new Date();
+  const daysLeft = Math.floor((expireDate - now) / (1000 * 60 * 60 * 24));
+  const totalDays = Math.floor((expireDate - new Date(s.created)) / (1000 * 60 * 60 * 24));
+  const expirePercent = Math.round((1 - daysLeft / totalDays) * 100);
+  return { ...s, daysLeft, expirePercent };
 }
 
 // ── 智谱 GLM 额度 ──
