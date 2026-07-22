@@ -298,19 +298,20 @@ function render(d) {
     }
     midHtml += `<div class="mid-card" style="grid-column: 1 / -1; padding: 16px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
-        <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
-          <span style="font-size:28px">${weather.weatherText.split(" ")[0]}</span>
+        <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
+          <span style="font-size:32px">${weather.weatherText.split(" ")[0]}</span>
           <div>
-            <div style="font-size:32px;font-weight:800;color:var(--accent);line-height:1">${weather.temp}°</div>
+            <div style="font-size:36px;font-weight:800;color:var(--accent);line-height:1">${weather.temp}°</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">📍 ${weather.location}</div>
             <div style="font-size:11px;color:var(--muted)">${weather.tempMin}~${weather.tempMax}° · 💧${weather.humidity}% · <span style="color:${rainWarn?'var(--warn)':'var(--accent)'}">🌧${weather.rainProbability}%</span></div>
           </div>
         </div>
-        <div style="display:flex;gap:4px;flex-shrink:0;">
+        <div style="display:flex;gap:6px;flex-shrink:0;overflow-x:auto;">
           ${weather.forecast ? weather.forecast.slice(0,7).map((f,i) => {
             const wd = ["日","一","二","三","四","五","六"][new Date(f.date).getDay()];
-            return `<div style="text-align:center;padding:6px 10px;min-width:52px;${i===0?'background:var(--accent-soft);border-radius:8px':''}">
+            return `<div style="text-align:center;padding:8px 12px;min-width:56px;${i===0?'background:var(--accent-soft);border-radius:8px':''}">
               <div style="font-size:11px;color:var(--muted)">周${wd}</div>
-              <div style="font-size:18px;margin:3px 0">${f.weatherText.split(" ")[0]}</div>
+              <div style="font-size:20px;margin:4px 0">${f.weatherText.split(" ")[0]}</div>
               <div style="font-size:12px;font-weight:600">${f.tempMax}°</div>
               <div style="font-size:11px;color:var(--muted)">${f.tempMin}°</div>
             </div>`;
