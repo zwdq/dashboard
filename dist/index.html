@@ -297,8 +297,6 @@ function render(d) {
         <span class="dot ok"></span>
         <span class="srv-name">${providerIcon} ${providerName}</span>
       </div>
-      <div class="metric"><span class="metric-label">🏷️ 名称</span><span class="metric-value">${esc(s.name)}</span></div>
-      <div class="metric"><span class="metric-label">📍 区域</span><span class="metric-value">${esc(s.regionName)}</span></div>
       <div class="metric"><span class="metric-label">🌐 公网IP</span><span class="metric-value" style="font-size:11px">${esc(s.ip)}</span></div>
       <div class="metric"><span class="metric-label">🏠 内网IP</span><span class="metric-value" style="font-size:11px">${esc(s.privateIp)}</span></div>
       <div class="metric"><span class="metric-label">💻 配置</span><span class="metric-value">${s.cpu}核 ${s.memory}GB</span></div>
@@ -322,15 +320,6 @@ function render(d) {
       }
     } else {
       rightHtml += `<div class="metric"><span class="metric-label">📊 CPU/内存</span><span class="metric-value warn">暂无监控</span></div>`;
-    }
-
-    // 快照 / 防火墙（如果有）
-    if (s.snapshot) {
-      const snapWarn = s.snapshot.includes("2/2");
-      rightHtml += `<div class="metric"><span class="metric-label">📸 快照</span><span class="metric-value ${snapWarn ? 'warn' : 'ok'}">${esc(s.snapshot)}</span></div>`;
-    }
-    if (s.firewall) {
-      rightHtml += `<div class="metric"><span class="metric-label">🔒 防火墙</span><span class="metric-value ok">${esc(s.firewall)}</span></div>`;
     }
 
     // 到期进度条
