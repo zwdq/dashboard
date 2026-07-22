@@ -56,20 +56,19 @@ body {
 .col-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* 卡片 */
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; transition: .2s; position: relative; overflow: hidden; }
-.card:hover { border-color: var(--border-active); background: var(--card-hover); transform: translateY(-1px); }
-.card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; opacity: 0; transition: .2s; }
-.card.ok::before { background: var(--accent); opacity: 1; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; transition: .2s; position: relative; overflow: hidden; }
+.card:hover { border-color: var(--border-active); background: var(--card-hover); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+.card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; opacity: 0; transition: .2s; border-radius: 3px 0 0 3px; }
+.card.ok::before { background: var(--accent); opacity: 1; box-shadow: 0 0 8px var(--glow); }
 .card.err::before { background: var(--danger); opacity: 1; }
 
 /* 左列 — 项目 */
 .proj-card { cursor: pointer; }
-.proj-card:hover .proj-url { color: var(--accent); }
-.proj-icon { font-size: 20px; margin-bottom: 8px; }
-.proj-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
-.proj-cn { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
-.proj-url { font-size: 11px; color: var(--muted); text-decoration: none; word-break: break-all; transition: .15s; }
-.proj-stats { display: flex; gap: 10px; margin-top: 8px; font-size: 11px; color: var(--muted); }
+.proj-card:hover .proj-cn { color: var(--accent); }
+.proj-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.proj-icon { font-size: 14px; flex-shrink: 0; }
+.proj-cn { font-size: 15px; font-weight: 600; transition: .15s; }
+.proj-stats { display: flex; gap: 12px; font-size: 11px; color: var(--muted); padding-left: 22px; }
 .proj-stats span { display: flex; align-items: center; gap: 3px; }
 
 /* 中列 — 监控 */
@@ -217,9 +216,10 @@ function render(d) {
     const ms = h ? h.ms : null;
     const cardClass = ok === true ? "ok" : ok === false ? "err" : "";
     leftHtml += `<div class="card proj-card ${cardClass}" onclick="window.open('${url}','_blank')">
-      <div class="proj-icon">${ok === true ? '🟢' : ok === false ? '🔴' : '⚪️'}</div>
-      <div class="proj-name">${esc(p.name)}</div>
-      <div class="proj-cn">${esc(CN_NAMES[p.name] || '')}</div>
+      <div class="proj-top">
+        <span class="proj-icon">${ok === true ? '🟢' : ok === false ? '🔴' : '⚪️'}</span>
+        <span class="proj-cn">${esc(CN_NAMES[p.name] || p.name)}</span>
+      </div>
       <div class="proj-stats">
         ${ms !== null ? `<span>⚡ ${ms}ms</span>` : ''}
         <span>📦 ${p.deployments || 0}</span>
