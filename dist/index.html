@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 工作中心</title>
+<style>
+:root {
+  --bg: #f7f8fa; --card: #fff; --border: #e4e6ef; --text: #2c2c2c; --muted: #888;
+  --accent: #30CF79; --accent-soft: rgba(48,207,121,.08); --danger: #e55; --warn: #f5a623;
+  --code-bg: #f5f5f5;
+}
+[data-theme="dark"] {
+  --bg: #1a1a1a; --card: #252526; --border: #3a3a3a; --text: #e0e0e0; --muted: #888;
+  --accent: #30CF79; --accent-soft: rgba(48,207,121,.1); --code-bg: #1e1e1e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background .25s, color .25s; }
+
+/* 登录 */
+.login-wrap { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+.login-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 340px; text-align: center; }
+.login-box h1 { font-size: 24px; margin-bottom: 8px; }
+.login-box p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+.login-box input { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 15px; margin-bottom: 16px; outline: none; }
+.login-box input:focus { border-color: var(--accent); }
+.login-box button { width: 100%; padding: 12px; border-radius: 10px; border: 0; cursor: pointer; background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; }
+
+/* 主布局 */
+.app { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+header h1 { font-size: 20px; font-weight: 700; }
+.header-right { display: flex; gap: 8px; align-items: center; }
+.btn { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 13px; transition: .15s; }
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 卡片 */
+.section { margin-bottom: 32px; }
+.section-title { font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.section-title .count { background: var(--accent-soft); color: var(--accent); padding: 1px 8px; border-radius: 10px; font-size: 11px; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; transition: .15s; }
+.card:hover { border-color: var(--accent); }
+
+/* 状态点 */
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.dot.ok { background: var(--accent); }
+.dot.err { background: var(--danger); }
+.dot.warn { background: var(--warn); }
+
+/* 项目卡片 */
+.proj-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.proj-url { font-size: 12px; color: var(--accent); text-decoration: none; word-break: break-all; }
+.proj-url:hover { text-decoration: underline; }
+.proj-meta { display: flex; gap: 12px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.proj-meta span { display: flex; align-items: center; gap: 4px; }
+.proj-health { margin-top: 8px; font-size: 12px; }
+
+/* 指标条 */
+.metric { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.metric:last-child { border-bottom: 0; }
+.metric-label { font-size: 13px; color: var(--text); }
+.metric-value { font-size: 13px; font-weight: 600; }
+.metric-value.ok { color: var(--accent); }
+.metric-value.err { color: var(--danger); }
+.metric-value.warn { color: var(--warn); }
+
+/* 加载 */
+.loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+.spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin-right: 8px; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Toast */
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 8px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: .25s; z-index: 200; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- 登录 -->
+<div class="login-wrap" id="loginPage">
+  <div class="login-box">
+    <h1>📊 工作中心</h1>
+    <p>输入密码进入 Dashboard</p>
+    <input type="password" id="pwInput" placeholder="访问密码" onkeyup="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()">进入</button>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div class="app" id="mainApp" style="display:none">
+  <header>
+    <h1>📊 工作中心</h1>
+    <div class="header-right">
+      <button class="btn" onclick="loadData()">🔄 刷新</button>
+      <button class="btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+      <button class="btn" onclick="logout()">退出</button>
+    </div>
+  </header>
+
+  <div id="content">
+    <div class="loading"><span class="spinner"></span>加载中...</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let token = localStorage.getItem("dash_token") || "";
+let cacheData = null;
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(window._tt); window._tt = setTimeout(() => el.classList.remove("show"), 2000);
+}
+
+async function doLogin() {
+  const pw = document.getElementById("pwInput").value;
+  if (!pw) return;
+  token = pw;
+  const ok = await loadData();
+  if (ok) { localStorage.setItem("dash_token", token); }
+  else { toast("密码错误"); token = ""; }
+}
+
+function logout() { localStorage.removeItem("dash_token"); token = ""; location.reload(); }
+
+async function api(path) {
+  const r = await fetch("/api" + path, { headers: { "Authorization": "Bearer " + token } });
+  return await r.json();
+}
+
+async function loadData() {
+  document.getElementById("content").innerHTML = '<div class="loading"><span class="spinner"></span>加载中...</div>';
+  try {
+    const r = await api("/status");
+    if (!r.success) { toast("加载失败"); return false; }
+    cacheData = r.data;
+    render(r.data);
+    return true;
+  } catch (e) { toast("网络错误"); return false; }
+}
+
+function render(d) {
+  const el = document.getElementById("content");
+  let html = "";
+
+  // CF Pages 项目 + 健康
+  const pages = d.pages || [];
+  const health = d.health || [];
+  html += `<div class="section">
+    <div class="section-title">🌐 CF Pages 项目 <span class="count">${pages.length}</span></div>
+    <div class="cards">`;
+  for (const p of pages) {
+    const h = health.find(x => x.name === p.name);
+    const url = p.subdomain ? `https://${p.subdomain}` : (p.domains[0] || "");
+    const statusDot = h ? (h.ok ? '<span class="dot ok"></span>正常' : '<span class="dot err"></span>异常') : '<span class="dot warn"></span>未知';
+    const ms = h ? `${h.ms}ms` : "";
+    html += `<div class="card">
+      <div class="proj-name">${esc(p.name)}</div>
+      ${url ? `<a class="proj-url" href="${url}" target="_blank">${url}</a>` : ''}
+      <div class="proj-meta">
+        <span>${statusDot}</span>
+        ${ms ? `<span>⚡ ${ms}</span>` : ''}
+        <span>📦 ${p.deployments || 0} 次部署</span>
+      </div>
+    </div>`;
+  }
+  html += `</div></div>`;
+
+  // CF 资源使用
+  const u = d.cfUsage || {};
+  html += `<div class="section">
+    <div class="section-title">☁️ Cloudflare 资源</div>
+    <div class="cards">
+      <div class="card">
+        <div class="metric"><span class="metric-label">D1 数据库</span><span class="metric-value">${u.d1Count || 0} 个</span></div>
+        <div class="metric"><span class="metric-label">Workers</span><span class="metric-value">${u.workersCount || 0} 个</span></div>
+        <div class="metric"><span class="metric-label">Pages 项目</span><span class="metric-value">${pages.length} 个</span></div>
+        <div class="metric"><span class="metric-label">免费额度</span><span class="metric-value ok">D1: 5GB · Workers: 10万次/天</span></div>
+      </div>`;
+  if (u.d1 && u.d1.length) {
+    html += `<div class="card"><div class="proj-name" style="margin-bottom:8px;">D1 数据库</div>`;
+    for (const db of u.d1) {
+      html += `<div class="metric"><span class="metric-label">${esc(db.name)}</span><span class="metric-value" style="font-size:11px;color:var(--muted)">${db.uuid.slice(0,8)}...</span></div>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div></div>`;
+
+  // 腾讯云
+  const tc = d.tencent;
+  if (tc && tc.configured) {
+    html += `<div class="section">
+      <div class="section-title">🖥️ 腾讯云服务器</div>
+      <div class="cards">
+        <div class="card">
+          <div class="proj-name">轻量应用服务器</div>
+          <div class="proj-meta"><span><span class="dot ok"></span>运行中</span><span>📍 北京</span></div>
+          <div class="metric"><span class="metric-label">IP</span><span class="metric-value" style="font-size:12px">152.136.152.43</span></div>
+          <div class="metric"><span class="metric-label">配置</span><span class="metric-value">2核 4GB</span></div>
+          <div class="metric"><span class="metric-label">系统</span><span class="metric-value" style="font-size:12px">Ubuntu 22.04</span></div>
+          <div class="metric"><span class="metric-label">到期</span><span class="metric-value ok">2028-06-12</span></div>
+          <div class="metric"><span class="metric-label">快照</span><span class="metric-value">2/2 (已满)</span></div>
+          <div class="metric"><span class="metric-label">防火墙</span><span class="metric-value ok">已精简 (6条规则)</span></div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // 大模型
+  const glm = d.glm;
+  const kimi = d.kimi;
+  const aiCards = [];
+  if (glm && glm.configured) {
+    aiCards.push(`<div class="card">
+      <div class="proj-name">🤖 智谱 GLM</div>
+      <div class="proj-meta"><span>${glm.status === 'ok' ? '<span class="dot ok"></span>正常' : '<span class="dot err"></span>异常'}</span></div>
+      ${glm.models ? `<div class="metric"><span class="metric-label">可用模型</span><span class="metric-value" style="font-size:11px">${glm.models.length} 个</span></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.8">${glm.models.map(m=>`<code style="background:var(--code-bg);padding:1px 5px;border-radius:3px;margin:1px">${m}</code>`).join(' ')}</div>` : ''}
+      <div class="metric"><span class="metric-label">免费额度</span><span class="metric-value ok">GLM-4-Flash 免费</span></div>
+    </div>`);
+  }
+  if (kimi && kimi.configured) {
+    aiCards.push(`<div class="card">
+      <div class="proj-name">🌙 Kimi / Moonshot</div>
+      <div class="proj-meta"><span>${kimi.status === 'ok' ? '<span class="dot ok"></span>正常' : '<span class="dot err"></span>异常'}</span></div>
+      ${kimi.models ? `<div class="metric"><span class="metric-label">可用模型</span><span class="metric-value" style="font-size:11px">${kimi.models.length} 个</span></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.8">${kimi.models.map(m=>`<code style="background:var(--code-bg);padding:1px 5px;border-radius:3px;margin:1px">${m}</code>`).join(' ')}</div>` : ''}
+    </div>`);
+  }
+  if (aiCards.length) {
+    html += `<div class="section"><div class="section-title">🧠 AI 模型 <span class="count">${aiCards.length}</span></div><div class="cards">${aiCards.join('')}</div></div>`;
+  }
+
+  // 时间戳
+  html += `<div style="text-align:center;color:var(--muted);font-size:12px;margin-top:20px">更新于 ${new Date(d.timestamp).toLocaleString('zh-CN')}</div>`;
+
+  el.innerHTML = html;
+}
+
+function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+// 主题
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute("data-theme") || "light";
+  const next = cur === "light" ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("dash_theme", next);
+  document.getElementById("themeBtn").textContent = next === "light" ? "🌙" : "☀️";
+}
+(function(){ const t = localStorage.getItem("dash_theme") || "light"; document.documentElement.setAttribute("data-theme", t); })();
+
+// 自动登录
+if (token) {
+  document.getElementById("loginPage").style.display = "none";
+  document.getElementById("mainApp").style.display = "block";
+  document.getElementById("themeBtn").textContent = (localStorage.getItem("dash_theme")||"light") === "light" ? "🌙" : "☀️";
+  loadData();
+}
+</script>
+</body>
+</html>
