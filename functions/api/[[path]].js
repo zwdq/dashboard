@@ -75,10 +75,32 @@ async function getTencentLighthouse(env) {
   const sid = env.TENCENT_SECRET_ID;
   const skey = env.TENCENT_SECRET_KEY;
   if (!sid || !skey) return null;
-
-  // 腾讯云 API 需要签名，这里用简化方式 — 通过前端直连不可行
-  // 返回配置标记，前端会知道这是腾讯云
   return { configured: true, region: "ap-beijing" };
+}
+
+// ── 阿里云 ECS ──
+function getAliyunECS() {
+  return {
+    configured: true,
+    name: "zsqypc",
+    instanceId: "i-2ze79b6r8gddzl3h7sy4",
+    region: "cn-beijing",
+    regionName: "华北2（北京）",
+    ip: "123.57.225.162",
+    privateIp: "172.22.15.248",
+    cpu: 2,
+    memory: 2,
+    os: "Ubuntu 22.04 64位",
+    bandwidth: "3 Mbps",
+    expireDate: "2027-01-12",
+    created: "2024-01-01",
+    disk: "ESSD Entry 40GB",
+    diskSize: 40,
+    // CPU 和内存使用率需要阿里云 AK/SK 才能动态获取
+    cpuUsage: null,
+    memUsage: null,
+    note: "需要阿里云 AK/SK 才能获取实时监控数据",
+  };
 }
 
 // ── 智谱 GLM 额度 ──
@@ -158,10 +180,11 @@ export async function onRequest(context) {
   try {
     // GET /api/status — 全量状态
     if (path === "/status" && request.method === "GET") {
-      const [pages, usage, tencent, glm, kimi] = await Promise.all([
+      const [pages, usage, tencent, aliyun, glm, kimi] = await Promise.all([
         getCFPages(env),
         getCFUsage(env),
         getTencentLighthouse(env),
+        getAliyunECS(),
         getGLMBalance(env),
         getKimiBalance(env),
       ]);
@@ -182,6 +205,7 @@ export async function onRequest(context) {
           health: healthResults,
           cfUsage: usage,
           tencent,
+          aliyun,
           glm,
           kimi,
           timestamp: new Date().toISOString(),
