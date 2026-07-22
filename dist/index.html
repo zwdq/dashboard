@@ -190,14 +190,14 @@ async function api(path) {
   return await r.json();
 }
 
-async function loadData() {
-  document.getElementById("board").innerHTML = '<div class="loading"><span class="spinner"></span>加载中...</div>';
+async function loadData(silent) {
+  if (!silent) document.getElementById("board").innerHTML = '<div class="loading"><span class="spinner"></span>加载中...</div>';
   try {
     const r = await api("/status");
-    if (!r.success) { toast("加载失败"); return false; }
+    if (!r.success) { if (!silent) toast("加载失败"); return false; }
     render(r.data);
     return true;
-  } catch (e) { toast("网络错误"); return false; }
+  } catch (e) { if (!silent) toast("网络错误"); return false; }
 }
 
 function render(d) {
@@ -393,8 +393,8 @@ if (token) {
   document.getElementById("mainApp").style.display = "flex";
   document.getElementById("themeBtn").textContent = (localStorage.getItem("dash_theme")||"dark") === "light" ? "🌙" : "☀️";
   loadData();
-  // 自动刷新
-  setInterval(() => { if (token) loadData(); }, 60000);
+  // 自动刷新（静默，不闪白屏）
+  setInterval(() => { if (token) loadData(true); }, 60000);
 }
 </script>
 </body>
