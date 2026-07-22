@@ -306,15 +306,13 @@ function render(d) {
           </div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0;">
-          ${weather.forecast ? weather.forecast.slice(0,5).map((f,i) => {
-            const r = f.rainProb || 0;
+          ${weather.forecast ? weather.forecast.slice(0,7).map((f,i) => {
             const wd = ["日","一","二","三","四","五","六"][new Date(f.date).getDay()];
-            return `<div style="text-align:center;padding:4px 6px;min-width:44px;${i===0?'background:var(--accent-soft);border-radius:6px':''}">
-              <div style="font-size:10px;color:var(--muted)">周${wd}</div>
-              <div style="font-size:16px;margin:2px 0">${f.weatherText.split(" ")[0]}</div>
-              <div style="font-size:11px;font-weight:600">${f.tempMax}°</div>
-              <div style="font-size:10px;color:var(--muted)">${f.tempMin}°</div>
-              ${r>50?`<div style="font-size:10px;color:var(--warn)">🌧${r}%</div>`:''}
+            return `<div style="text-align:center;padding:6px 10px;min-width:52px;${i===0?'background:var(--accent-soft);border-radius:8px':''}">
+              <div style="font-size:11px;color:var(--muted)">周${wd}</div>
+              <div style="font-size:18px;margin:3px 0">${f.weatherText.split(" ")[0]}</div>
+              <div style="font-size:12px;font-weight:600">${f.tempMax}°</div>
+              <div style="font-size:11px;color:var(--muted)">${f.tempMin}°</div>
             </div>`;
           }).join('') : ''}
         </div>
