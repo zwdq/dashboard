@@ -275,8 +275,7 @@ function render(d) {
       <div class="mid-card-title">🤖 智谱 GLM ${glm.status === 'ok' ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</div>
       <div class="metric"><span class="metric-label">状态</span><span class="metric-value ${glm.status === 'ok' ? 'ok' : 'err'}">${glm.status === 'ok' ? '正常' : '异常'}</span></div>
       <div class="metric"><span class="metric-label">模型数</span><span class="metric-value">${(glm.models || []).length}</span></div>
-      <div class="metric"><span class="metric-label">额度</span><span class="metric-value warn">${glm.balanceNote || '未知'}</span></div>
-      <div class="metric"><span class="metric-label">免费</span><span class="metric-value ok">GLM-4-Flash</span></div>`;
+      <div class="metric"><span class="metric-label">免费模型</span><span class="metric-value ok">GLM-4-Flash</span></div>`;
     if (glm.models) {
       midHtml += `<div class="model-tags">${glm.models.map(m => `<span class="model-tag">${m}</span>`).join('')}</div>`;
     }
