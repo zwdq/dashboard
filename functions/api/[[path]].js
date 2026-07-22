@@ -41,7 +41,7 @@ async function getCFPages(env) {
   });
 }
 
-// ── Cloudflare D1 + Workers 额度 ──
+// ── Cloudflare D1 + Workers 实时用量 ──
 async function getCFUsage(env) {
   const token = env.CF_API_TOKEN;
   const account = env.CF_ACCOUNT_ID;
@@ -57,7 +57,7 @@ async function getCFUsage(env) {
     d1 = (d.result || []).map(db => ({ name: db.name, uuid: db.uuid, created: db.created_at }));
   } catch {}
 
-  // Workers
+  // Workers 列表
   let workers = [];
   try {
     const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts`, {
@@ -67,7 +67,63 @@ async function getCFUsage(env) {
     workers = (d.result || []).map(w => ({ id: w.id, modified: w.modified_on }));
   } catch {}
 
-  return { d1, workers, d1Count: d1.length, workersCount: workers.length };
+  // GraphQL Analytics — 最近 7 天 Workers + D1 用量
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const fromISO = weekAgo.toISOString();
+  const todayStr = now.toISOString().slice(0, 10);
+
+  let analytics = { workersRequests: 0, workersErrors: 0, d1RowsRead: 0, d1RowsWritten: 0, d1ByDb: [] };
+
+  try {
+    const gqlResp = await fetch(`https://api.cloudflare.com/client/v4/graphql`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: `{ viewer { accounts(filter: {accountTag: "${account}"}) {
+          workersInvocationsAdaptive(limit: 100, filter: {datetime_gt: "${fromISO}"}) {
+            sum { requests subrequests errors }
+            dimensions { scriptName }
+          }
+          d1QueriesAdaptiveGroups(limit: 100, filter: {datetime_gt: "${fromISO}"}) {
+            sum { rowsRead rowsWritten }
+            dimensions { databaseId date }
+          }
+        } } }`,
+      }),
+    });
+    const gqlData = await gqlResp.json();
+    const acc = gqlData?.data?.viewer?.accounts?.[0];
+
+    if (acc) {
+      // Workers
+      const wData = acc.workersInvocationsAdaptive || [];
+      analytics.workersRequests = wData.reduce((s, i) => s + (i.sum.requests || 0), 0);
+      analytics.workersErrors = wData.reduce((s, i) => s + (i.sum.errors || 0), 0);
+
+      // D1 — 按数据库聚合
+      const dData = acc.d1QueriesAdaptiveGroups || [];
+      const dbMap = {};
+      for (const item of dData) {
+        const dbId = item.dimensions.databaseId;
+        const dbInfo = d1.find(d => d.uuid === dbId);
+        const dbName = dbInfo?.name || dbId.slice(0, 8);
+        if (!dbMap[dbName]) dbMap[dbName] = { name: dbName, rowsRead: 0, rowsWritten: 0 };
+        dbMap[dbName].rowsRead += item.sum.rowsRead || 0;
+        dbMap[dbName].rowsWritten += item.sum.rowsWritten || 0;
+        analytics.d1RowsRead += item.sum.rowsRead || 0;
+        analytics.d1RowsWritten += item.sum.rowsWritten || 0;
+      }
+      analytics.d1ByDb = Object.values(dbMap);
+    }
+  } catch {}
+
+  return {
+    d1, workers,
+    d1Count: d1.length,
+    workersCount: workers.length,
+    analytics,
+  };
 }
 
 // ── 腾讯云轻量服务器 ──
@@ -87,7 +143,7 @@ async function getTencentLighthouse(env) {
     cpu: 2,
     memory: 4,
     os: "Ubuntu 22.04 LTS",
-    bandwidth: "—",
+    bandwidth: "6 Mbps",
     expireDate: "2028-06-12",
     created: "2024-06-12",
     disk: "70 GB SSD",
