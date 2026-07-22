@@ -232,22 +232,22 @@ function render(d) {
   // === 中列：CF 资源 + AI 模型 ===
   let midHtml = `<div class="mid-grid">`;
 
-  // CF 资源
-  const a = u.analytics || {};
+  // CF 资源 — u 现在就是 analytics 本身
+  const a = u;
   const wReq = a.workersRequests || 0;
-  const wLimit = 100000; // Workers 免费 10万/天
+  const wLimit = 100000;
   const wPct = Math.min(Math.round(wReq / wLimit * 100), 100);
   const d1Read = a.d1RowsRead || 0;
   const d1Write = a.d1RowsWritten || 0;
   const d1Total = d1Read + d1Write;
-  const d1Limit = 5000000; // D1 免费 500万行/天
+  const d1Limit = 5000000;
   const d1Pct = Math.min(Math.round(d1Total / d1Limit * 100), 100);
 
   midHtml += `<div class="mid-card">
     <div class="mid-card-title">☁️ CF 资源</div>
     <div class="metric"><span class="metric-label">Pages 项目</span><span class="metric-value ok">${pages.length} 个</span></div>
-    <div class="metric"><span class="metric-label">D1 数据库</span><span class="metric-value">${u.d1Count || 0} 个</span></div>
-    <div class="metric"><span class="metric-label">Workers</span><span class="metric-value">${u.workersCount || 0} 个</span></div>
+    <div class="metric"><span class="metric-label">D1 数据库</span><span class="metric-value">${a.d1Count || 0} 个</span></div>
+    <div class="metric"><span class="metric-label">Workers</span><span class="metric-value">${a.workersCount || 0} 个</span></div>
   </div>`;
 
   // CF 当天用量 — 进度条

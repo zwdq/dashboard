@@ -47,31 +47,11 @@ async function getCFUsage(env) {
   const account = env.CF_ACCOUNT_ID;
   if (!token || !account) return {};
 
-  // D1 数据库列表
-  let d1 = [];
-  try {
-    const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/d1/database`, {
-      headers: { "Authorization": `Bearer ${token}` },
-    });
-    const d = await r.json();
-    d1 = (d.result || []).map(db => ({ name: db.name, uuid: db.uuid, created: db.created_at }));
-  } catch {}
-
-  // Workers 列表
-  let workers = [];
-  try {
-    const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts`, {
-      headers: { "Authorization": `Bearer ${token}` },
-    });
-    const d = await r.json();
-    workers = (d.result || []).map(w => ({ id: w.id, modified: w.modified_on }));
-  } catch {}
-
-  // GraphQL Analytics — 当天用量
+  // GraphQL Analytics — 当天用量（一次请求拿所有数据）
   const todayStr = new Date().toISOString().slice(0, 10);
   const fromISO = `${todayStr}T00:00:00Z`;
 
-  let analytics = { workersRequests: 0, workersErrors: 0, d1RowsRead: 0, d1RowsWritten: 0 };
+  let analytics = { workersRequests: 0, workersErrors: 0, d1RowsRead: 0, d1RowsWritten: 0, d1Count: 0, workersCount: 0 };
 
   try {
     const gqlResp = await fetch(`https://api.cloudflare.com/client/v4/graphql`, {
@@ -84,6 +64,7 @@ async function getCFUsage(env) {
           }
           d1QueriesAdaptiveGroups(limit: 50, filter: {datetime_gt: "${fromISO}"}) {
             sum { rowsRead rowsWritten }
+            dimensions { databaseId }
           }
         } } }`,
       }),
@@ -99,14 +80,20 @@ async function getCFUsage(env) {
       const dData = acc.d1QueriesAdaptiveGroups || [];
       analytics.d1RowsRead = dData.reduce((s, i) => s + (i.sum.rowsRead || 0), 0);
       analytics.d1RowsWritten = dData.reduce((s, i) => s + (i.sum.rowsWritten || 0), 0);
+      analytics.d1Count = new Set(dData.map(i => i.dimensions.databaseId)).size;
     }
   } catch {}
 
-  return {
-    d1Count: d1.length,
-    workersCount: workers.length,
-    analytics,
-  };
+  // Workers count — 单独查（轻量）
+  try {
+    const r = await fetch(`https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts`, {
+      headers: { "Authorization": `Bearer ${token}` },
+    });
+    const d = await r.json();
+    analytics.workersCount = (d.result || []).length;
+  } catch {}
+
+  return analytics;
 }
 
 // ── 腾讯云轻量服务器 ──
