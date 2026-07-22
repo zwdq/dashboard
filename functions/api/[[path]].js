@@ -30,9 +30,7 @@ async function getCFPages(env) {
   if (!d.success) return [];
 
   return (d.result || []).map(p => {
-    // subdomain 已经包含 .pages.dev，domains 里也可能有自定义域名
     const subdomain = p.subdomain ? `${p.subdomain}` : null;
-    // 去掉可能的重复 .pages.dev
     const cleanSub = subdomain ? subdomain.replace(/\.pages\.dev\.pages\.dev$/, '.pages.dev') : null;
     return {
       name: p.name,
@@ -44,6 +42,21 @@ async function getCFPages(env) {
       deployments: p.deployments?.length || 0,
     };
   });
+}
+
+// ── 外部项目（非 CF Pages）──
+function getExternalSites() {
+  return [
+    {
+      name: "qdii-quota",
+      subdomain: "zwdq.github.io/qdii-quota",
+      domains: [],
+      created: null,
+      modified: null,
+      source: null,
+      deployments: 0,
+    },
+  ];
 }
 
 // ── Cloudflare D1 + Workers 实时用量 ──
@@ -302,7 +315,7 @@ export async function onRequest(context) {
         return json({ success: true, data, cached: true });
       }
 
-      const [pages, usage, tencent, aliyun, kimi, weather] = await Promise.all([
+      const [cfPages, usage, tencent, aliyun, kimi, weather] = await Promise.all([
         getCFPages(env),
         getCFUsage(env),
         getTencentLighthouse(env),
@@ -310,6 +323,7 @@ export async function onRequest(context) {
         getKimiBalance(env),
         getWeather(),
       ]);
+      const pages = [...cfPages, ...getExternalSites()];
 
       // 健康检查每个 Pages 项目（并行）
       const healthUrls = pages.filter(p => p.subdomain).map(p => ({
