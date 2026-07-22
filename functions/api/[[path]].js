@@ -1,5 +1,10 @@
 // Dashboard API — 所有 token 从环境变量读取，前端不含任何密钥
 
+// ── 内存缓存 ──
+let _cache = null;
+let _cacheTime = 0;
+const CACHE_TTL = 180000; // 3 分钟
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -242,8 +247,14 @@ export async function onRequest(context) {
   if (!checkAuth(request, env)) return json({ success: false, error: "未授权" }, 401);
 
   try {
-    // GET /api/status — 全量状态
+    // GET /api/status — 全量状态（带缓存）
     if (path === "/status" && request.method === "GET") {
+      // 检查缓存
+      const now = Date.now();
+      if (_cache && (now - _cacheTime) < CACHE_TTL) {
+        return json({ success: true, data: _cache, cached: true, cachedAt: new Date(_cacheTime).toISOString() });
+      }
+
       const [pages, usage, tencent, aliyun, kimi] = await Promise.all([
         getCFPages(env),
         getCFUsage(env),
@@ -261,18 +272,21 @@ export async function onRequest(context) {
         healthUrls.map(async h => ({ name: h.name, ...(await h.promise) }))
       );
 
-      return json({
-        success: true,
-        data: {
-          pages,
-          health: healthResults,
-          cfUsage: usage,
-          tencent,
-          aliyun,
-          kimi,
-          timestamp: new Date().toISOString(),
-        },
-      });
+      const result = {
+        pages,
+        health: healthResults,
+        cfUsage: usage,
+        tencent,
+        aliyun,
+        kimi,
+        timestamp: new Date().toISOString(),
+      };
+
+      // 更新缓存
+      _cache = result;
+      _cacheTime = Date.now();
+
+      return json({ success: true, data: result, cached: false });
     }
 
     return json({ success: false, error: "未找到路由: " + path }, 404);

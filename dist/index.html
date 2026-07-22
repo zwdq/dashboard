@@ -111,6 +111,11 @@ body {
 .spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin-right: 8px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* 骨架屏 */
+.skeleton { min-height: 80px; position: relative; overflow: hidden; }
+.skeleton::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, var(--card-hover) 50%, transparent 100%); animation: shimmer 1.5s infinite; }
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
 /* Toast */
 .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 10px 22px; border-radius: 12px; font-size: 13px; opacity: 0; transition: .25s; z-index: 200; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -190,11 +195,40 @@ async function api(path) {
 }
 
 async function loadData(silent) {
-  if (!silent) document.getElementById("board").innerHTML = '<div class="loading"><span class="spinner"></span>加载中...</div>';
+  if (!silent) {
+    document.getElementById("board").innerHTML = `
+      <div class="col">
+        <div class="col-header">🌐 CF Pages 项目 <span class="badge">···</span></div>
+        <div class="col-body">
+          ${'<div class="card skeleton"></div>'.repeat(3)}
+        </div>
+      </div>
+      <div class="col">
+        <div class="col-header">📊 资源 & 模型监控</div>
+        <div class="col-body">
+          <div class="mid-grid">
+            <div class="mid-card skeleton"></div>
+            <div class="mid-card skeleton"></div>
+            <div class="mid-card skeleton"></div>
+            <div class="mid-card skeleton"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="col-header">🖥️ 服务器 <span class="badge">···</span></div>
+        <div class="col-body">
+          ${'<div class="card skeleton"></div>'.repeat(2)}
+        </div>
+      </div>`;
+  }
   try {
     const r = await api("/status");
     if (!r.success) { if (!silent) toast("加载失败"); return false; }
     render(r.data);
+    if (r.cached) {
+      const age = Math.round((Date.now() - new Date(r.cachedAt).getTime()) / 1000);
+      toast(`缓存数据（${age}秒前获取）`);
+    }
     return true;
   } catch (e) { if (!silent) toast("网络错误"); return false; }
 }
