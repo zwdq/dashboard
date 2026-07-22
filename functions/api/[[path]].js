@@ -249,10 +249,13 @@ export async function onRequest(context) {
   try {
     // GET /api/status — 全量状态（带缓存）
     if (path === "/status" && request.method === "GET") {
-      // 检查缓存
-      const now = Date.now();
-      if (_cache && (now - _cacheTime) < CACHE_TTL) {
-        return json({ success: true, data: _cache, cached: true, cachedAt: new Date(_cacheTime).toISOString() });
+      // 用 Cache API 做边缘缓存
+      const cacheUrl = new Request("https://dash-cache.local/status", request);
+      const cache = caches.default;
+      const cached = await cache.match(cacheUrl);
+      if (cached) {
+        const data = await cached.json();
+        return json({ success: true, data, cached: true });
       }
 
       const [pages, usage, tencent, aliyun, kimi] = await Promise.all([
@@ -282,9 +285,11 @@ export async function onRequest(context) {
         timestamp: new Date().toISOString(),
       };
 
-      // 更新缓存
-      _cache = result;
-      _cacheTime = Date.now();
+      // 更新 Cache API
+      const cacheResp = new Response(JSON.stringify(result), {
+        headers: { "Content-Type": "application/json", "Cache-Control": "public, max-age=180" },
+      });
+      await cache.put(cacheUrl, cacheResp);
 
       return json({ success: true, data: result, cached: false });
     }
