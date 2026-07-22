@@ -378,6 +378,15 @@ function render(d) {
   const ppPct = Math.max(0, Math.min(Math.round(ppElapsed / ppTotal * 100), 100));
   const ppActive = ppDaysLeft > 0;
 
+  // 三毛机场
+  const smExpire = new Date("2027-06-10T00:00:00");
+  const smDaysLeft = Math.max(0, Math.floor((smExpire - wowNow) / (1000 * 60 * 60 * 24)));
+  const smStart = new Date("2026-06-10T00:00:00");
+  const smTotal = Math.floor((smExpire - smStart) / (1000 * 60 * 60 * 24));
+  const smElapsed = Math.floor((wowNow - smStart) / (1000 * 60 * 60 * 24));
+  const smPct = Math.max(0, Math.min(Math.round(smElapsed / smTotal * 100), 100));
+  const smActive = smDaysLeft > 0;
+
   midHtml += `<div class="mid-card">
     <div class="mid-card-title">⏰ 到期监控</div>
     
@@ -390,13 +399,22 @@ function render(d) {
       <div class="srv-bar-label"><span>7/18</span><span>${wowPct}% 已用</span><span>8/18</span></div>
     </div>
 
-    <div>
+    <div style="margin-bottom:14px">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
         <span class="metric-label">🦐 皮皮虾AI中转 ${ppActive ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</span>
         <span style="font-size:12px; color:var(--accent)">${ppDaysLeft} 天 ${ppHoursLeft} 小时</span>
       </div>
       <div class="srv-bar"><div class="srv-bar-fill ${ppPct > 85 ? 'err' : ppPct > 70 ? 'warn' : 'ok'}" style="width:${ppPct}%"></div></div>
       <div class="srv-bar-label"><span>7/12</span><span>${ppPct}% 已用</span><span>8/12</span></div>
+    </div>
+
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px">
+        <span class="metric-label">✈️ 三毛机场 ${smActive ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</span>
+        <span style="font-size:12px; color:var(--accent)">${smDaysLeft} 天</span>
+      </div>
+      <div class="srv-bar"><div class="srv-bar-fill ${smPct > 85 ? 'err' : smPct > 70 ? 'warn' : 'ok'}" style="width:${smPct}%"></div></div>
+      <div class="srv-bar-label"><span>6/10</span><span>${smPct}% 已用</span><span>6/10/27</span></div>
     </div>
   </div>`;
 
