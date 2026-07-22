@@ -257,6 +257,7 @@ function render(d) {
       <div class="mid-card-title">🤖 智谱 GLM ${glm.status === 'ok' ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</div>
       <div class="metric"><span class="metric-label">状态</span><span class="metric-value ${glm.status === 'ok' ? 'ok' : 'err'}">${glm.status === 'ok' ? '正常' : '异常'}</span></div>
       <div class="metric"><span class="metric-label">模型数</span><span class="metric-value">${(glm.models || []).length}</span></div>
+      <div class="metric"><span class="metric-label">额度</span><span class="metric-value warn">${glm.balanceNote || '未知'}</span></div>
       <div class="metric"><span class="metric-label">免费</span><span class="metric-value ok">GLM-4-Flash</span></div>`;
     if (glm.models) {
       midHtml += `<div class="model-tags">${glm.models.map(m => `<span class="model-tag">${m}</span>`).join('')}</div>`;
@@ -270,6 +271,11 @@ function render(d) {
       <div class="mid-card-title">🌙 Kimi ${kimi.status === 'ok' ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</div>
       <div class="metric"><span class="metric-label">状态</span><span class="metric-value ${kimi.status === 'ok' ? 'ok' : 'err'}">${kimi.status === 'ok' ? '正常' : '异常'}</span></div>
       <div class="metric"><span class="metric-label">模型数</span><span class="metric-value">${(kimi.models || []).length}</span></div>`;
+    if (kimi.balance) {
+      midHtml += `<div class="metric"><span class="metric-label">💰 可用余额</span><span class="metric-value ok">¥${kimi.balance.available.toFixed(2)}</span></div>
+      <div class="metric"><span class="metric-label">💵 现金余额</span><span class="metric-value">¥${kimi.balance.cash.toFixed(2)}</span></div>
+      <div class="metric"><span class="metric-label">🎫 代金券</span><span class="metric-value">¥${kimi.balance.voucher.toFixed(2)}</span></div>`;
+    }
     if (kimi.models) {
       midHtml += `<div class="model-tags">${kimi.models.map(m => `<span class="model-tag">${m}</span>`).join('')}</div>`;
     }

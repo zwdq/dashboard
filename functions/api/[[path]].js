@@ -92,7 +92,7 @@ async function getGLMBalance(env) {
     });
     if (!r.ok) return { configured: true, status: "error", code: r.status };
     const d = await r.json();
-    return { configured: true, status: "ok", models: (d.data || []).map(m => m.id).slice(0, 10) };
+    return { configured: true, status: "ok", models: (d.data || []).map(m => m.id).slice(0, 10), balance: null, balanceNote: "智谱暂不支持API查额度，请登录控制台查看" };
   } catch (e) {
     return { configured: true, status: "error", error: e.message };
   }
@@ -104,12 +104,29 @@ async function getKimiBalance(env) {
   if (!key) return null;
 
   try {
-    const r = await fetch("https://api.moonshot.cn/v1/models", {
-      headers: { "Authorization": `Bearer ${key}` },
-    });
-    if (!r.ok) return { configured: true, status: "error", code: r.status };
-    const d = await r.json();
-    return { configured: true, status: "ok", models: (d.data || []).map(m => m.id) };
+    // 查余额
+    const [modelsRes, balanceRes] = await Promise.all([
+      fetch("https://api.moonshot.cn/v1/models", { headers: { "Authorization": `Bearer ${key}` } }),
+      fetch("https://api.moonshot.cn/v1/users/me/balance", { headers: { "Authorization": `Bearer ${key}` } }),
+    ]);
+
+    const modelsData = modelsRes.ok ? await modelsRes.json() : { data: [] };
+    let balance = null;
+    if (balanceRes.ok) {
+      const bd = await balanceRes.json();
+      balance = {
+        available: bd.data?.available_balance ?? 0,
+        cash: bd.data?.cash_balance ?? 0,
+        voucher: bd.data?.voucher_balance ?? 0,
+      };
+    }
+
+    return {
+      configured: true,
+      status: modelsRes.ok ? "ok" : "error",
+      models: (modelsData.data || []).map(m => m.id),
+      balance,
+    };
   } catch (e) {
     return { configured: true, status: "error", error: e.message };
   }
