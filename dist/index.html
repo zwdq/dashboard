@@ -123,7 +123,21 @@ body {
 /* 时间戳 */
 .ts { text-align: center; color: var(--muted); font-size: 11px; padding: 8px 0; flex-shrink: 0; }
 
-@media (max-width: 900px) { .board { grid-template-columns: 1fr; overflow-y: auto; } .col { max-height: none; } }
+@media (max-width: 900px) {
+  .board { grid-template-columns: 1fr; padding: 10px; gap: 0; }
+  .col { display: none; }
+  .col.active { display: flex; }
+  .col-body { padding-bottom: 20px; }
+  .tabs { display: flex; gap: 4px; padding: 8px 10px; background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .tab { flex: 1; padding: 8px 0; text-align: center; border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; transition: .15s; border: 1px solid transparent; }
+  .tab.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .mid-grid { grid-template-columns: 1fr; }
+  .topbar { padding: 10px 12px; }
+  .topbar h1 { font-size: 16px; }
+  .topbar-left span:not(.live-dot) { display: none; }
+  .ts { padding: 4px 0; }
+}
+@media (min-width: 901px) { .tabs { display: none; } }
 </style>
 </head>
 <body>
@@ -153,6 +167,11 @@ body {
     </div>
   </div>
 
+  <div class="tabs" id="tabs">
+    <div class="tab active" onclick="switchTab(0)">🌐 项目</div>
+    <div class="tab" onclick="switchTab(1)">📊 监控</div>
+    <div class="tab" onclick="switchTab(2)">🖥️ 服务器</div>
+  </div>
   <div class="board" id="board">
     <div class="loading"><span class="spinner"></span>加载中...</div>
   </div>
@@ -388,7 +407,7 @@ function render(d) {
   }
 
   document.getElementById("board").innerHTML = `
-    <div class="col">
+    <div class="col active">
       <div class="col-header">🌐 CF Pages 项目 <span class="badge">${pages.length}</span></div>
       <div class="col-body">${leftHtml}</div>
     </div>
@@ -405,6 +424,11 @@ function render(d) {
 }
 
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function switchTab(i) {
+  document.querySelectorAll(".tab").forEach((t, idx) => t.classList.toggle("active", idx === i));
+  document.querySelectorAll(".col").forEach((c, idx) => c.classList.toggle("active", idx === i));
+}
 
 function normalizeServer(s) {
   if (!s || !s.configured) return null;
