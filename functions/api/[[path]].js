@@ -24,15 +24,21 @@ async function getCFPages(env) {
   const d = await r.json();
   if (!d.success) return [];
 
-  return (d.result || []).map(p => ({
-    name: p.name,
-    subdomain: p.subdomain ? `${p.subdomain}.pages.dev` : null,
-    domains: p.domains || [],
-    created: p.created_on,
-    modified: p.modified_on,
-    source: p.build_config?.root_dir || null,
-    deployments: p.deployments?.length || 0,
-  }));
+  return (d.result || []).map(p => {
+    // subdomain 已经包含 .pages.dev，domains 里也可能有自定义域名
+    const subdomain = p.subdomain ? `${p.subdomain}` : null;
+    // 去掉可能的重复 .pages.dev
+    const cleanSub = subdomain ? subdomain.replace(/\.pages\.dev\.pages\.dev$/, '.pages.dev') : null;
+    return {
+      name: p.name,
+      subdomain: cleanSub,
+      domains: p.domains || [],
+      created: p.created_on,
+      modified: p.modified_on,
+      source: p.build_config?.root_dir || null,
+      deployments: p.deployments?.length || 0,
+    };
+  });
 }
 
 // ── Cloudflare D1 + Workers 额度 ──

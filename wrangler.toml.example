@@ -1,0 +1,13 @@
+name = "dashboard"
+compatibility_date = "2024-09-25"
+pages_build_output_dir = "dist"
+
+[vars]
+ACCESS_PASSWORD = "your-password"
+CF_ACCOUNT_ID = "your-account-id"
+# 以下密钥也放在这里（CF Pages env_vars 不注入 Functions 时的 workaround）
+CF_API_TOKEN = "your-cf-token"
+TENCENT_SECRET_ID = "your-tencent-id"
+TENCENT_SECRET_KEY = "your-tencent-key"
+GLM_API_KEY = "your-glm-key"
+KIMI_API_KEY = "your-kimi-key"
