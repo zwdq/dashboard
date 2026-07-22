@@ -1,81 +1,125 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>📊 工作中心</title>
 <style>
 :root {
-  --bg: #f7f8fa; --card: #fff; --border: #e4e6ef; --text: #2c2c2c; --muted: #888;
-  --accent: #30CF79; --accent-soft: rgba(48,207,121,.08); --danger: #e55; --warn: #f5a623;
-  --code-bg: #f5f5f5;
+  --bg: #0a0e17; --bg2: #0f1520; --card: #131923; --card-hover: #1a2230;
+  --border: #1e2838; --border-active: #2a3a4f; --text: #c8d3e0; --muted: #5a6a7e;
+  --accent: #30CF79; --accent2: #0ea5e9; --accent3: #8b5cf6;
+  --accent-soft: rgba(48,207,121,.08); --danger: #ef4444; --warn: #f5a623;
+  --code-bg: #0d1117; --glow: rgba(48,207,121,.15);
 }
-[data-theme="dark"] {
-  --bg: #1a1a1a; --card: #252526; --border: #3a3a3a; --text: #e0e0e0; --muted: #888;
-  --accent: #30CF79; --accent-soft: rgba(48,207,121,.1); --code-bg: #1e1e1e;
+[data-theme="light"] {
+  --bg: #f0f2f5; --bg2: #e8ebf0; --card: #fff; --card-hover: #f8f9fb;
+  --border: #e0e4eb; --border-active: #c8d0db; --text: #2c3e50; --muted: #8895a7;
+  --accent-soft: rgba(48,207,121,.06); --code-bg: #f5f6f8; --glow: rgba(48,207,121,.08);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background .25s, color .25s; }
+body {
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--text); min-height: 100vh; overflow: hidden;
+  transition: background .3s, color .3s;
+}
 
 /* 登录 */
-.login-wrap { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-.login-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 40px; width: 340px; text-align: center; }
-.login-box h1 { font-size: 24px; margin-bottom: 8px; }
-.login-box p { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
-.login-box input { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 15px; margin-bottom: 16px; outline: none; }
-.login-box input:focus { border-color: var(--accent); }
-.login-box button { width: 100%; padding: 12px; border-radius: 10px; border: 0; cursor: pointer; background: var(--accent); color: #fff; font-size: 15px; font-weight: 600; }
+.login-wrap { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: radial-gradient(ellipse at center, var(--bg2) 0%, var(--bg) 100%); }
+.login-box { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 48px 40px; width: 360px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+.login-box h1 { font-size: 28px; margin-bottom: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.login-box p { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+.login-box input { width: 100%; padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); font-size: 15px; margin-bottom: 16px; outline: none; transition: .2s; }
+.login-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
+.login-box button { width: 100%; padding: 14px; border-radius: 12px; border: 0; cursor: pointer; background: linear-gradient(135deg, var(--accent), #28b36c); color: #fff; font-size: 15px; font-weight: 600; transition: .2s; }
+.login-box button:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--glow); }
 
-/* 主布局 */
-.app { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-header h1 { font-size: 20px; font-weight: 700; }
-.header-right { display: flex; gap: 8px; align-items: center; }
-.btn { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 13px; transition: .15s; }
+/* 主布局 — 看板式 */
+.app { display: flex; flex-direction: column; height: 100vh; }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 24px; background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.topbar-left { display: flex; align-items: center; gap: 16px; }
+.topbar h1 { font-size: 18px; font-weight: 700; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 var(--glow); } 50% { opacity: .6; box-shadow: 0 0 0 6px transparent; } }
+.topbar-right { display: flex; gap: 8px; }
+.btn { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); cursor: pointer; font-size: 13px; transition: .15s; }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 
+/* 三列看板 */
+.board { display: grid; grid-template-columns: 280px 1fr 320px; gap: 16px; padding: 16px; flex: 1; overflow: hidden; }
+.col { display: flex; flex-direction: column; overflow: hidden; }
+.col-header { display: flex; align-items: center; gap: 8px; padding: 0 4px 12px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; flex-shrink: 0; }
+.col-header .badge { background: var(--accent-soft); color: var(--accent); padding: 1px 8px; border-radius: 10px; font-size: 11px; }
+.col-body { flex: 1; overflow-y: auto; padding-right: 4px; }
+.col-body::-webkit-scrollbar { width: 4px; }
+.col-body::-webkit-scrollbar-track { background: transparent; }
+.col-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
 /* 卡片 */
-.section { margin-bottom: 32px; }
-.section-title { font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-.section-title .count { background: var(--accent-soft); color: var(--accent); padding: 1px 8px; border-radius: 10px; font-size: 11px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 12px; transition: .2s; position: relative; overflow: hidden; }
+.card:hover { border-color: var(--border-active); background: var(--card-hover); transform: translateY(-1px); }
+.card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; opacity: 0; transition: .2s; }
+.card.ok::before { background: var(--accent); opacity: 1; }
+.card.err::before { background: var(--danger); opacity: 1; }
 
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; transition: .15s; }
-.card:hover { border-color: var(--accent); }
+/* 左列 — 项目 */
+.proj-card { cursor: pointer; }
+.proj-card:hover .proj-url { color: var(--accent); }
+.proj-icon { font-size: 20px; margin-bottom: 8px; }
+.proj-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.proj-cn { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.proj-url { font-size: 11px; color: var(--muted); text-decoration: none; word-break: break-all; transition: .15s; }
+.proj-stats { display: flex; gap: 10px; margin-top: 8px; font-size: 11px; color: var(--muted); }
+.proj-stats span { display: flex; align-items: center; gap: 3px; }
 
-/* 状态点 */
-.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-.dot.ok { background: var(--accent); }
-.dot.err { background: var(--danger); }
-.dot.warn { background: var(--warn); }
-
-/* 项目卡片 */
-.proj-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-.proj-url { font-size: 12px; color: var(--accent); text-decoration: none; word-break: break-all; }
-.proj-url:hover { text-decoration: underline; }
-.proj-meta { display: flex; gap: 12px; margin-top: 10px; font-size: 12px; color: var(--muted); }
-.proj-meta span { display: flex; align-items: center; gap: 4px; }
-.proj-health { margin-top: 8px; font-size: 12px; }
-
-/* 指标条 */
-.metric { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+/* 中列 — 监控 */
+.mid-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mid-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; transition: .2s; }
+.mid-card:hover { border-color: var(--border-active); }
+.mid-card-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.metric { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); }
 .metric:last-child { border-bottom: 0; }
-.metric-label { font-size: 13px; color: var(--text); }
-.metric-value { font-size: 13px; font-weight: 600; }
+.metric-label { font-size: 12px; color: var(--muted); }
+.metric-value { font-size: 12px; font-weight: 600; }
 .metric-value.ok { color: var(--accent); }
 .metric-value.err { color: var(--danger); }
 .metric-value.warn { color: var(--warn); }
 
+/* 右列 — 服务器 */
+.srv-card { }
+.srv-status { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.srv-status .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--glow); }
+.srv-name { font-size: 15px; font-weight: 700; }
+.srv-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 6px 0 2px; }
+.srv-bar-fill { height: 100%; border-radius: 3px; transition: width .5s; }
+.srv-bar-fill.ok { background: linear-gradient(90deg, var(--accent), #28b36c); }
+.srv-bar-fill.warn { background: linear-gradient(90deg, var(--warn), #d48806); }
+.srv-bar-fill.err { background: linear-gradient(90deg, var(--danger), #c53030); }
+.srv-bar-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 10px; }
+
+/* 模型标签 */
+.model-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.model-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; background: var(--code-bg); border: 1px solid var(--border); color: var(--muted); font-family: "JetBrains Mono", monospace; }
+
+/* 状态点 */
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.dot.ok { background: var(--accent); box-shadow: 0 0 6px var(--glow); }
+.dot.err { background: var(--danger); }
+.dot.warn { background: var(--warn); }
+
 /* 加载 */
-.loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
-.spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin-right: 8px; vertical-align: middle; }
+.loading { text-align: center; padding: 60px; color: var(--muted); font-size: 14px; }
+.spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin-right: 8px; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Toast */
-.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 8px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: .25s; z-index: 200; pointer-events: none; }
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 10px 22px; border-radius: 12px; font-size: 13px; opacity: 0; transition: .25s; z-index: 200; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.3); }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-@media (max-width: 640px) { .cards { grid-template-columns: 1fr; } }
+/* 时间戳 */
+.ts { text-align: center; color: var(--muted); font-size: 11px; padding: 8px 0; flex-shrink: 0; }
+
+@media (max-width: 900px) { .board { grid-template-columns: 1fr; overflow-y: auto; } .col { max-height: none; } }
 </style>
 </head>
 <body>
@@ -92,16 +136,20 @@ header h1 { font-size: 20px; font-weight: 700; }
 
 <!-- 主界面 -->
 <div class="app" id="mainApp" style="display:none">
-  <header>
-    <h1>📊 工作中心</h1>
-    <div class="header-right">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>📊 工作中心</h1>
+      <span class="live-dot"></span>
+      <span style="font-size:12px;color:var(--muted)">实时监控</span>
+    </div>
+    <div class="topbar-right">
       <button class="btn" onclick="loadData()">🔄 刷新</button>
-      <button class="btn" onclick="toggleTheme()" id="themeBtn">🌙</button>
+      <button class="btn" onclick="toggleTheme()" id="themeBtn">☀️</button>
       <button class="btn" onclick="logout()">退出</button>
     </div>
-  </header>
+  </div>
 
-  <div id="content">
+  <div class="board" id="board">
     <div class="loading"><span class="spinner"></span>加载中...</div>
   </div>
 </div>
@@ -110,7 +158,15 @@ header h1 { font-size: 20px; font-weight: 700; }
 
 <script>
 let token = localStorage.getItem("dash_token") || "";
-let cacheData = null;
+
+// 项目中文名映射
+const CN_NAMES = {
+  "dashboard": "工作中心看板",
+  "md-editor": "Markdown 编辑器",
+  "memos-dd": "备忘录",
+  "bookmarks": "书签管理",
+  "mteam-demo": "M-Team 下载",
+};
 
 function toast(msg) {
   const el = document.getElementById("toast");
@@ -135,132 +191,160 @@ async function api(path) {
 }
 
 async function loadData() {
-  document.getElementById("content").innerHTML = '<div class="loading"><span class="spinner"></span>加载中...</div>';
+  document.getElementById("board").innerHTML = '<div class="loading"><span class="spinner"></span>加载中...</div>';
   try {
     const r = await api("/status");
     if (!r.success) { toast("加载失败"); return false; }
-    cacheData = r.data;
     render(r.data);
     return true;
   } catch (e) { toast("网络错误"); return false; }
 }
 
 function render(d) {
-  const el = document.getElementById("content");
-  let html = "";
-
-  // CF Pages 项目 + 健康
   const pages = d.pages || [];
   const health = d.health || [];
-  html += `<div class="section">
-    <div class="section-title">🌐 CF Pages 项目 <span class="count">${pages.length}</span></div>
-    <div class="cards">`;
+  const u = d.cfUsage || {};
+  const tc = d.tencent;
+  const glm = d.glm;
+  const kimi = d.kimi;
+
+  // === 左列：CF Pages 项目 ===
+  let leftHtml = "";
   for (const p of pages) {
     const h = health.find(x => x.name === p.name);
     const url = p.subdomain ? `https://${p.subdomain}` : (p.domains[0] || "");
-    const statusDot = h ? (h.ok ? '<span class="dot ok"></span>正常' : '<span class="dot err"></span>异常') : '<span class="dot warn"></span>未知';
-    const ms = h ? `${h.ms}ms` : "";
-    html += `<div class="card">
+    const ok = h ? h.ok : null;
+    const ms = h ? h.ms : null;
+    const cardClass = ok === true ? "ok" : ok === false ? "err" : "";
+    leftHtml += `<div class="card proj-card ${cardClass}" onclick="window.open('${url}','_blank')">
+      <div class="proj-icon">${ok === true ? '🟢' : ok === false ? '🔴' : '⚪️'}</div>
       <div class="proj-name">${esc(p.name)}</div>
-      ${url ? `<a class="proj-url" href="${url}" target="_blank">${url}</a>` : ''}
-      <div class="proj-meta">
-        <span>${statusDot}</span>
-        ${ms ? `<span>⚡ ${ms}</span>` : ''}
-        <span>📦 ${p.deployments || 0} 次部署</span>
+      <div class="proj-cn">${esc(CN_NAMES[p.name] || '')}</div>
+      <a class="proj-url" href="${url}" onclick="event.stopPropagation()" target="_blank">${url.replace('https://','')}</a>
+      <div class="proj-stats">
+        ${ms !== null ? `<span>⚡ ${ms}ms</span>` : ''}
+        <span>📦 ${p.deployments || 0}</span>
       </div>
     </div>`;
   }
-  html += `</div></div>`;
 
-  // CF 资源使用
-  const u = d.cfUsage || {};
-  html += `<div class="section">
-    <div class="section-title">☁️ Cloudflare 资源</div>
-    <div class="cards">
-      <div class="card">
-        <div class="metric"><span class="metric-label">D1 数据库</span><span class="metric-value">${u.d1Count || 0} 个</span></div>
-        <div class="metric"><span class="metric-label">Workers</span><span class="metric-value">${u.workersCount || 0} 个</span></div>
-        <div class="metric"><span class="metric-label">Pages 项目</span><span class="metric-value">${pages.length} 个</span></div>
-        <div class="metric"><span class="metric-label">免费额度</span><span class="metric-value ok">D1: 5GB · Workers: 10万次/天</span></div>
-      </div>`;
+  // === 中列：CF 资源 + AI 模型 ===
+  let midHtml = `<div class="mid-grid">`;
+
+  // CF 资源
+  midHtml += `<div class="mid-card">
+    <div class="mid-card-title">☁️ Cloudflare 资源</div>
+    <div class="metric"><span class="metric-label">Pages 项目</span><span class="metric-value ok">${pages.length} 个</span></div>
+    <div class="metric"><span class="metric-label">D1 数据库</span><span class="metric-value">${u.d1Count || 0} 个</span></div>
+    <div class="metric"><span class="metric-label">Workers</span><span class="metric-value">${u.workersCount || 0} 个</span></div>
+    <div class="metric"><span class="metric-label">D1 免费额度</span><span class="metric-value ok">5 GB</span></div>
+    <div class="metric"><span class="metric-label">Workers 额度</span><span class="metric-value ok">10万次/天</span></div>
+  </div>`;
+
+  // D1 列表
   if (u.d1 && u.d1.length) {
-    html += `<div class="card"><div class="proj-name" style="margin-bottom:8px;">D1 数据库</div>`;
+    midHtml += `<div class="mid-card">
+      <div class="mid-card-title">🗄️ D1 数据库</div>`;
     for (const db of u.d1) {
-      html += `<div class="metric"><span class="metric-label">${esc(db.name)}</span><span class="metric-value" style="font-size:11px;color:var(--muted)">${db.uuid.slice(0,8)}...</span></div>`;
+      midHtml += `<div class="metric"><span class="metric-label">${esc(db.name)}</span><span class="metric-value" style="font-size:10px;color:var(--muted)">${db.uuid.slice(0,8)}</span></div>`;
     }
-    html += `</div>`;
+    midHtml += `</div>`;
   }
-  html += `</div></div>`;
 
-  // 腾讯云
-  const tc = d.tencent;
+  // GLM
+  if (glm && glm.configured) {
+    midHtml += `<div class="mid-card">
+      <div class="mid-card-title">🤖 智谱 GLM ${glm.status === 'ok' ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</div>
+      <div class="metric"><span class="metric-label">状态</span><span class="metric-value ${glm.status === 'ok' ? 'ok' : 'err'}">${glm.status === 'ok' ? '正常' : '异常'}</span></div>
+      <div class="metric"><span class="metric-label">模型数</span><span class="metric-value">${(glm.models || []).length}</span></div>
+      <div class="metric"><span class="metric-label">免费</span><span class="metric-value ok">GLM-4-Flash</span></div>`;
+    if (glm.models) {
+      midHtml += `<div class="model-tags">${glm.models.map(m => `<span class="model-tag">${m}</span>`).join('')}</div>`;
+    }
+    midHtml += `</div>`;
+  }
+
+  // Kimi
+  if (kimi && kimi.configured) {
+    midHtml += `<div class="mid-card">
+      <div class="mid-card-title">🌙 Kimi ${kimi.status === 'ok' ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</div>
+      <div class="metric"><span class="metric-label">状态</span><span class="metric-value ${kimi.status === 'ok' ? 'ok' : 'err'}">${kimi.status === 'ok' ? '正常' : '异常'}</span></div>
+      <div class="metric"><span class="metric-label">模型数</span><span class="metric-value">${(kimi.models || []).length}</span></div>`;
+    if (kimi.models) {
+      midHtml += `<div class="model-tags">${kimi.models.map(m => `<span class="model-tag">${m}</span>`).join('')}</div>`;
+    }
+    midHtml += `</div>`;
+  }
+
+  midHtml += `</div>`;
+
+  // === 右列：腾讯云服务器 ===
+  let rightHtml = "";
   if (tc && tc.configured) {
-    html += `<div class="section">
-      <div class="section-title">🖥️ 腾讯云服务器</div>
-      <div class="cards">
-        <div class="card">
-          <div class="proj-name">轻量应用服务器</div>
-          <div class="proj-meta"><span><span class="dot ok"></span>运行中</span><span>📍 北京</span></div>
-          <div class="metric"><span class="metric-label">IP</span><span class="metric-value" style="font-size:12px">152.136.152.43</span></div>
-          <div class="metric"><span class="metric-label">配置</span><span class="metric-value">2核 4GB</span></div>
-          <div class="metric"><span class="metric-label">系统</span><span class="metric-value" style="font-size:12px">Ubuntu 22.04</span></div>
-          <div class="metric"><span class="metric-label">到期</span><span class="metric-value ok">2028-06-12</span></div>
-          <div class="metric"><span class="metric-label">快照</span><span class="metric-value">2/2 (已满)</span></div>
-          <div class="metric"><span class="metric-label">防火墙</span><span class="metric-value ok">已精简 (6条规则)</span></div>
-        </div>
+    // 计算到期天数
+    const expireDate = new Date("2028-06-12");
+    const now = new Date();
+    const daysLeft = Math.floor((expireDate - now) / (1000 * 60 * 60 * 24));
+    const totalDays = Math.floor((expireDate - new Date("2024-06-12")) / (1000 * 60 * 60 * 24));
+    const expirePercent = Math.round((1 - daysLeft / totalDays) * 100);
+
+    rightHtml += `<div class="card srv-card ok">
+      <div class="srv-status">
+        <span class="dot ok"></span>
+        <span class="srv-name">轻量服务器</span>
       </div>
+      <div class="metric"><span class="metric-label">📍 区域</span><span class="metric-value">北京</span></div>
+      <div class="metric"><span class="metric-label">🌐 IP</span><span class="metric-value" style="font-size:11px">152.136.152.43</span></div>
+      <div class="metric"><span class="metric-label">💻 配置</span><span class="metric-value">2核 4GB</span></div>
+      <div class="metric"><span class="metric-label">💿 系统</span><span class="metric-value" style="font-size:11px">Ubuntu 22.04</span></div>
+      <div style="margin-top:12px">
+        <div class="metric-label" style="margin-bottom:4px">⏰ 到期时间</div>
+        <div class="srv-bar"><div class="srv-bar-fill ${expirePercent > 80 ? 'warn' : 'ok'}" style="width:${expirePercent}%"></div></div>
+        <div class="srv-bar-label"><span>2024-06-12</span><span style="color:var(--accent)">${daysLeft} 天剩余</span><span>2028-06-12</span></div>
+      </div>
+      <div class="metric"><span class="metric-label">📸 快照</span><span class="metric-value warn">2/2 已满</span></div>
+      <div class="metric"><span class="metric-label">🔒 防火墙</span><span class="metric-value ok">6 条规则</span></div>
+      <div class="metric"><span class="metric-label">💰 余额</span><span class="metric-value ok">¥0.00 (预付费)</span></div>
     </div>`;
   }
 
-  // 大模型
-  const glm = d.glm;
-  const kimi = d.kimi;
-  const aiCards = [];
-  if (glm && glm.configured) {
-    aiCards.push(`<div class="card">
-      <div class="proj-name">🤖 智谱 GLM</div>
-      <div class="proj-meta"><span>${glm.status === 'ok' ? '<span class="dot ok"></span>正常' : '<span class="dot err"></span>异常'}</span></div>
-      ${glm.models ? `<div class="metric"><span class="metric-label">可用模型</span><span class="metric-value" style="font-size:11px">${glm.models.length} 个</span></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.8">${glm.models.map(m=>`<code style="background:var(--code-bg);padding:1px 5px;border-radius:3px;margin:1px">${m}</code>`).join(' ')}</div>` : ''}
-      <div class="metric"><span class="metric-label">免费额度</span><span class="metric-value ok">GLM-4-Flash 免费</span></div>
-    </div>`);
-  }
-  if (kimi && kimi.configured) {
-    aiCards.push(`<div class="card">
-      <div class="proj-name">🌙 Kimi / Moonshot</div>
-      <div class="proj-meta"><span>${kimi.status === 'ok' ? '<span class="dot ok"></span>正常' : '<span class="dot err"></span>异常'}</span></div>
-      ${kimi.models ? `<div class="metric"><span class="metric-label">可用模型</span><span class="metric-value" style="font-size:11px">${kimi.models.length} 个</span></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.8">${kimi.models.map(m=>`<code style="background:var(--code-bg);padding:1px 5px;border-radius:3px;margin:1px">${m}</code>`).join(' ')}</div>` : ''}
-    </div>`);
-  }
-  if (aiCards.length) {
-    html += `<div class="section"><div class="section-title">🧠 AI 模型 <span class="count">${aiCards.length}</span></div><div class="cards">${aiCards.join('')}</div></div>`;
-  }
-
-  // 时间戳
-  html += `<div style="text-align:center;color:var(--muted);font-size:12px;margin-top:20px">更新于 ${new Date(d.timestamp).toLocaleString('zh-CN')}</div>`;
-
-  el.innerHTML = html;
+  document.getElementById("board").innerHTML = `
+    <div class="col">
+      <div class="col-header">🌐 CF Pages 项目 <span class="badge">${pages.length}</span></div>
+      <div class="col-body">${leftHtml}</div>
+    </div>
+    <div class="col">
+      <div class="col-header">📊 资源 & 模型监控</div>
+      <div class="col-body">${midHtml}</div>
+      <div class="ts">更新于 ${new Date(d.timestamp).toLocaleString('zh-CN')}</div>
+    </div>
+    <div class="col">
+      <div class="col-header">🖥️ 服务器</div>
+      <div class="col-body">${rightHtml}</div>
+    </div>
+  `;
 }
 
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
 // 主题
 function toggleTheme() {
-  const cur = document.documentElement.getAttribute("data-theme") || "light";
+  const cur = document.documentElement.getAttribute("data-theme") || "dark";
   const next = cur === "light" ? "dark" : "light";
   document.documentElement.setAttribute("data-theme", next);
   localStorage.setItem("dash_theme", next);
   document.getElementById("themeBtn").textContent = next === "light" ? "🌙" : "☀️";
 }
-(function(){ const t = localStorage.getItem("dash_theme") || "light"; document.documentElement.setAttribute("data-theme", t); })();
+(function(){ const t = localStorage.getItem("dash_theme") || "dark"; document.documentElement.setAttribute("data-theme", t); })();
 
 // 自动登录
 if (token) {
   document.getElementById("loginPage").style.display = "none";
-  document.getElementById("mainApp").style.display = "block";
-  document.getElementById("themeBtn").textContent = (localStorage.getItem("dash_theme")||"light") === "light" ? "🌙" : "☀️";
+  document.getElementById("mainApp").style.display = "flex";
+  document.getElementById("themeBtn").textContent = (localStorage.getItem("dash_theme")||"dark") === "light" ? "🌙" : "☀️";
   loadData();
+  // 自动刷新
+  setInterval(() => { if (token) loadData(); }, 60000);
 }
 </script>
 </body>
