@@ -49,7 +49,7 @@ function getExternalSites() {
   return [
     {
       name: "qdii-quota",
-      subdomain: "zwdq.github.io/qdii-quota",
+      subdomain: "https://zwdq.github.io/qdii-quota/",
       domains: [],
       created: null,
       modified: null,
@@ -251,13 +251,23 @@ const WEATHER_CODES = {
 async function getWeather() {
   try {
     const r = await fetch(
-      "https://api.open-meteo.com/v1/forecast?latitude=39.9042&longitude=116.4074&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&timezone=Asia/Shanghai",
+      "https://api.open-meteo.com/v1/forecast?latitude=39.9042&longitude=116.4074&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,precipitation&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,weather_code&timezone=Asia/Shanghai&forecast_days=7",
       { signal: AbortSignal.timeout(4000) }
     );
     const d = await r.json();
     const c = d.current || {};
     const daily = d.daily || {};
     const code = c.weather_code ?? 0;
+    const dates = daily.time || [];
+    const forecast = dates.map((date, i) => ({
+      date,
+      tempMax: daily.temperature_2m_max?.[i],
+      tempMin: daily.temperature_2m_min?.[i],
+      precipitation: daily.precipitation_sum?.[i],
+      rainProb: daily.precipitation_probability_max?.[i],
+      weatherCode: daily.weather_code?.[i],
+      weatherText: WEATHER_CODES[daily.weather_code?.[i]] || "❓",
+    }));
     return {
       temp: c.temperature_2m,
       humidity: c.relative_humidity_2m,
@@ -268,9 +278,8 @@ async function getWeather() {
       tempMax: (daily.temperature_2m_max || [null])[0],
       tempMin: (daily.temperature_2m_min || [null])[0],
       rainProbability: (daily.precipitation_probability_max || [null])[0],
-      dailyCode: (daily.weather_code || [null])[0],
-      dailyText: WEATHER_CODES[(daily.weather_code || [0])[0]] || "❓",
       location: "北京西城区",
+      forecast,
     };
   } catch (e) {
     return { error: "天气获取失败", location: "北京西城区" };
@@ -328,7 +337,7 @@ export async function onRequest(context) {
       // 健康检查每个 Pages 项目（并行）
       const healthUrls = pages.filter(p => p.subdomain).map(p => ({
         name: p.name,
-        promise: checkHealth(`https://${p.subdomain}`),
+        promise: checkHealth(p.subdomain.startsWith("http") ? p.subdomain : `https://${p.subdomain}`),
       }));
       const healthResults = await Promise.all(
         healthUrls.map(async h => ({ name: h.name, ...(await h.promise) }))

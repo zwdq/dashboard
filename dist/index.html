@@ -265,7 +265,7 @@ function render(d) {
   let leftHtml = "";
   for (const p of pages) {
     const h = health.find(x => x.name === p.name);
-    const url = p.subdomain ? `https://${p.subdomain}` : (p.domains[0] || "");
+    const url = p.subdomain ? (p.subdomain.startsWith("http") ? p.subdomain : `https://${p.subdomain}`) : (p.domains[0] || "");
     const ok = h ? h.ok : null;
     const ms = h ? h.ms : null;
     const cardClass = ok === true ? "ok" : ok === false ? "err" : "";
@@ -289,7 +289,7 @@ function render(d) {
   if (weather && !weather.error) {
     const rainWarn = (weather.rainProbability || 0) > 60;
     midHtml += `<div class="mid-card" style="grid-column: 1 / -1; background: linear-gradient(135deg, var(--card), var(--card-hover));">
-      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
         <div>
           <div style="font-size:28px; font-weight:700;">${weather.weatherText}</div>
           <div style="font-size:13px; color:var(--muted); margin-top:2px">📍 ${weather.location}</div>
@@ -303,8 +303,29 @@ function render(d) {
           <div style="text-align:center"><div style="font-size:18px">🌬️</div>${weather.windSpeed}km/h</div>
           <div style="text-align:center"><div style="font-size:18px">${rainWarn ? '🌧️' : '☂️'}</div><span style="color:${rainWarn ? 'var(--warn)' : 'var(--accent)'}">${weather.rainProbability}%</span></div>
         </div>
-      </div>
-    </div>`;
+      </div>`;
+    // 7天预报
+    if (weather.forecast && weather.forecast.length) {
+      const dayNames = ["今天","明天","后天","大后天","4天后","5天后","6天后"];
+      midHtml += `<div style="display:flex; gap:6px; overflow-x:auto; padding-top:10px; border-top:1px solid var(--border);">`;
+      for (let i = 0; i < weather.forecast.length; i++) {
+        const f = weather.forecast[i];
+        const d = new Date(f.date);
+        const weekday = ["日","一","二","三","四","五","六"][d.getDay()];
+        const rProb = f.rainProb || 0;
+        const rColor = rProb > 60 ? 'var(--warn)' : rProb > 30 ? 'var(--muted)' : 'var(--accent)';
+        midHtml += `<div style="flex-shrink:0; text-align:center; padding:6px 8px; border-radius:8px; min-width:52px;${i===0?' background:var(--accent-soft);':''}">
+          <div style="font-size:11px; color:var(--muted)">${dayNames[i] || f.date.slice(5)}</div>
+          <div style="font-size:11px; color:var(--muted); margin-bottom:2px">周${weekday}</div>
+          <div style="font-size:18px; margin:2px 0">${f.weatherText.split(' ')[0]}</div>
+          <div style="font-size:12px; font-weight:600">${f.tempMax}°</div>
+          <div style="font-size:11px; color:var(--muted)">${f.tempMin}°</div>
+          <div style="font-size:11px; color:${rColor}; margin-top:2px">${rProb > 0 ? '🌧'+rProb+'%' : '—'}</div>
+        </div>`;
+      }
+      midHtml += `</div>`;
+    }
+    midHtml += `</div>`;
   }
 
   // CF 资源 — u 现在就是 analytics 本身
