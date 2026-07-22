@@ -234,32 +234,40 @@ function render(d) {
 
   // CF 资源
   const a = u.analytics || {};
+  const wReq = a.workersRequests || 0;
+  const wLimit = 100000; // Workers 免费 10万/天
+  const wPct = Math.min(Math.round(wReq / wLimit * 100), 100);
+  const d1Read = a.d1RowsRead || 0;
+  const d1Write = a.d1RowsWritten || 0;
+  const d1Total = d1Read + d1Write;
+  const d1Limit = 5000000; // D1 免费 500万行/天
+  const d1Pct = Math.min(Math.round(d1Total / d1Limit * 100), 100);
+
   midHtml += `<div class="mid-card">
-    <div class="mid-card-title">☁️ Cloudflare 资源</div>
+    <div class="mid-card-title">☁️ CF 资源</div>
     <div class="metric"><span class="metric-label">Pages 项目</span><span class="metric-value ok">${pages.length} 个</span></div>
     <div class="metric"><span class="metric-label">D1 数据库</span><span class="metric-value">${u.d1Count || 0} 个</span></div>
     <div class="metric"><span class="metric-label">Workers</span><span class="metric-value">${u.workersCount || 0} 个</span></div>
   </div>`;
 
-  // CF 实时用量（最近7天）
+  // CF 当天用量 — 进度条
   midHtml += `<div class="mid-card">
-    <div class="mid-card-title">📈 CF 用量（近7天）</div>
-    <div class="metric"><span class="metric-label">⚡ Workers 请求</span><span class="metric-value ${a.workersRequests > 90000 ? 'warn' : 'ok'}">${(a.workersRequests || 0).toLocaleString()}</span></div>
-    <div class="metric"><span class="metric-label">❌ Workers 错误</span><span class="metric-value ${a.workersErrors > 0 ? 'err' : 'ok'}">${a.workersErrors || 0}</span></div>
-    <div class="metric"><span class="metric-label">📊 D1 读取行数</span><span class="metric-value">${(a.d1RowsRead || 0).toLocaleString()}</span></div>
-    <div class="metric"><span class="metric-label">✏️ D1 写入行数</span><span class="metric-value">${(a.d1RowsWritten || 0).toLocaleString()}</span></div>
-    <div class="metric"><span class="metric-label">📋 免费额度</span><span class="metric-value" style="font-size:11px;color:var(--muted)">Workers 10万/天 · D1 500万行/天</span></div>
+    <div class="mid-card-title">📈 CF 今日用量</div>
+    <div style="margin-bottom:10px">
+      <div class="metric-label" style="margin-bottom:2px">⚡ Workers 请求 <span style="float:right;color:var(--accent)">${wReq.toLocaleString()} / ${wLimit.toLocaleString()}</span></div>
+      <div class="srv-bar"><div class="srv-bar-fill ${wPct > 80 ? 'err' : wPct > 50 ? 'warn' : 'ok'}" style="width:${wPct}%"></div></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div class="metric-label" style="margin-bottom:2px">📊 D1 读取行数 <span style="float:right;color:var(--accent)">${d1Read.toLocaleString()}</span></div>
+      <div class="srv-bar"><div class="srv-bar-fill ok" style="width:${Math.min(Math.round(d1Read/d1Limit*100),100)}%"></div></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div class="metric-label" style="margin-bottom:2px">✏️ D1 写入行数 <span style="float:right;color:var(--accent)">${d1Write.toLocaleString()}</span></div>
+      <div class="srv-bar"><div class="srv-bar-fill ok" style="width:${Math.min(Math.round(d1Write/d1Limit*100),100)}%"></div></div>
+    </div>
+    <div class="metric"><span class="metric-label">📊 总行数(读+写)</span><span class="metric-value">${d1Total.toLocaleString()} / ${d1Limit.toLocaleString()} (${d1Pct}%)</span></div>
+    <div class="metric"><span class="metric-label">❌ Workers 错误</span><span class="metric-value ${(a.workersErrors||0) > 0 ? 'err' : 'ok'}">${a.workersErrors || 0}</span></div>
   </div>`;
-
-  // D1 按数据库用量
-  if (a.d1ByDb && a.d1ByDb.length) {
-    midHtml += `<div class="mid-card">
-      <div class="mid-card-title">🗄️ D1 用量明细</div>`;
-    for (const db of a.d1ByDb) {
-      midHtml += `<div class="metric"><span class="metric-label">${esc(db.name)}</span><span class="metric-value" style="font-size:11px">读 ${(db.rowsRead||0).toLocaleString()} · 写 ${(db.rowsWritten||0).toLocaleString()}</span></div>`;
-    }
-    midHtml += `</div>`;
-  }
 
   // GLM
   if (glm && glm.configured) {

@@ -67,13 +67,11 @@ async function getCFUsage(env) {
     workers = (d.result || []).map(w => ({ id: w.id, modified: w.modified_on }));
   } catch {}
 
-  // GraphQL Analytics — 最近 7 天 Workers + D1 用量
-  const now = new Date();
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const fromISO = weekAgo.toISOString();
-  const todayStr = now.toISOString().slice(0, 10);
+  // GraphQL Analytics — 当天用量
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const fromISO = `${todayStr}T00:00:00Z`;
 
-  let analytics = { workersRequests: 0, workersErrors: 0, d1RowsRead: 0, d1RowsWritten: 0, d1ByDb: [] };
+  let analytics = { workersRequests: 0, workersErrors: 0, d1RowsRead: 0, d1RowsWritten: 0 };
 
   try {
     const gqlResp = await fetch(`https://api.cloudflare.com/client/v4/graphql`, {
@@ -81,13 +79,11 @@ async function getCFUsage(env) {
       headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         query: `{ viewer { accounts(filter: {accountTag: "${account}"}) {
-          workersInvocationsAdaptive(limit: 100, filter: {datetime_gt: "${fromISO}"}) {
-            sum { requests subrequests errors }
-            dimensions { scriptName }
+          workersInvocationsAdaptive(limit: 50, filter: {datetime_gt: "${fromISO}"}) {
+            sum { requests errors }
           }
-          d1QueriesAdaptiveGroups(limit: 100, filter: {datetime_gt: "${fromISO}"}) {
+          d1QueriesAdaptiveGroups(limit: 50, filter: {datetime_gt: "${fromISO}"}) {
             sum { rowsRead rowsWritten }
-            dimensions { databaseId date }
           }
         } } }`,
       }),
@@ -96,30 +92,17 @@ async function getCFUsage(env) {
     const acc = gqlData?.data?.viewer?.accounts?.[0];
 
     if (acc) {
-      // Workers
       const wData = acc.workersInvocationsAdaptive || [];
       analytics.workersRequests = wData.reduce((s, i) => s + (i.sum.requests || 0), 0);
       analytics.workersErrors = wData.reduce((s, i) => s + (i.sum.errors || 0), 0);
 
-      // D1 — 按数据库聚合
       const dData = acc.d1QueriesAdaptiveGroups || [];
-      const dbMap = {};
-      for (const item of dData) {
-        const dbId = item.dimensions.databaseId;
-        const dbInfo = d1.find(d => d.uuid === dbId);
-        const dbName = dbInfo?.name || dbId.slice(0, 8);
-        if (!dbMap[dbName]) dbMap[dbName] = { name: dbName, rowsRead: 0, rowsWritten: 0 };
-        dbMap[dbName].rowsRead += item.sum.rowsRead || 0;
-        dbMap[dbName].rowsWritten += item.sum.rowsWritten || 0;
-        analytics.d1RowsRead += item.sum.rowsRead || 0;
-        analytics.d1RowsWritten += item.sum.rowsWritten || 0;
-      }
-      analytics.d1ByDb = Object.values(dbMap);
+      analytics.d1RowsRead = dData.reduce((s, i) => s + (i.sum.rowsRead || 0), 0);
+      analytics.d1RowsWritten = dData.reduce((s, i) => s + (i.sum.rowsWritten || 0), 0);
     }
   } catch {}
 
   return {
-    d1, workers,
     d1Count: d1.length,
     workersCount: workers.length,
     analytics,
@@ -248,12 +231,15 @@ async function getKimiBalance(env) {
 // ── 健康检查 ──
 async function checkHealth(url) {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
     const start = Date.now();
-    const r = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(5000) });
+    const r = await fetch(url, { method: "HEAD", signal: controller.signal });
+    clearTimeout(timeout);
     const ms = Date.now() - start;
     return { url, status: r.status, ok: r.ok, ms };
   } catch (e) {
-    return { url, status: 0, ok: false, ms: 0, error: e.message };
+    return { url, status: 0, ok: false, ms: 0 };
   }
 }
 
@@ -280,14 +266,14 @@ export async function onRequest(context) {
         getKimiBalance(env),
       ]);
 
-      // 健康检查每个 Pages 项目
-      const healthResults = [];
-      for (const p of pages) {
-        if (p.subdomain) {
-          const h = await checkHealth(`https://${p.subdomain}`);
-          healthResults.push({ name: p.name, ...h });
-        }
-      }
+      // 健康检查每个 Pages 项目（并行）
+      const healthUrls = pages.filter(p => p.subdomain).map(p => ({
+        name: p.name,
+        promise: checkHealth(`https://${p.subdomain}`),
+      }));
+      const healthResults = await Promise.all(
+        healthUrls.map(async h => ({ name: h.name, ...(await h.promise) }))
+      );
 
       return json({
         success: true,
