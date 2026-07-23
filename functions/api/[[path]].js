@@ -233,22 +233,83 @@ async function getKimiBalance(env) {
 }
 
 // ── 皮皮虾 AI (Psydo) 额度 ──
+// token 缓存：用 KV 存 access_token + refresh_token，避免每次登录
+let _psydoTokenCache = null; // 内存缓存（同一次请求内复用）
+
+async function getPsydoAccessToken(env) {
+  // 1. 内存缓存检查（access_token 有效期 24h，提前 5 分钟刷新）
+  if (_psydoTokenCache && _psydoTokenCache.accessExp - Date.now() / 1000 > 300) {
+    return _psydoTokenCache.accessToken;
+  }
+
+  // 2. KV 缓存检查
+  const kvKey = "psydo_token";
+  let cached = null;
+  try {
+    const raw = await env.DASH_KV?.get(kvKey);
+    if (raw) cached = JSON.parse(raw);
+  } catch {}
+
+  // access_token 还有效？
+  if (cached && cached.accessExp - Date.now() / 1000 > 300) {
+    _psydoTokenCache = cached;
+    return cached.accessToken;
+  }
+
+  // 3. access_token 过期，尝试 refresh
+  if (cached && cached.refreshToken) {
+    try {
+      const refreshRes = await fetch("https://api.psydo.top/api/v1/auth/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: cached.refreshToken }),
+      });
+      if (refreshRes.ok) {
+        const rd = await refreshRes.json();
+        if (rd.code === 0 && rd.data?.access_token) {
+          const newToken = {
+            accessToken: rd.data.access_token,
+            refreshToken: rd.data.refresh_token,
+            accessExp: Math.floor(Date.now() / 1000) + (rd.data.expires_in || 86400),
+          };
+          _psydoTokenCache = newToken;
+          try { await env.DASH_KV?.put(kvKey, JSON.stringify(newToken)); } catch {}
+          return newToken.accessToken;
+        }
+      }
+    } catch {}
+  }
+
+  // 4. refresh 也失效，回退到密码登录
+  const loginRes = await fetch("https://api.psydo.top/api/v1/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: env.PSYDO_EMAIL, password: env.PSYDO_PASSWORD }),
+  });
+  if (!loginRes.ok) return null;
+  const loginData = await loginRes.json();
+  const accessToken = loginData?.data?.access_token;
+  if (!accessToken) return null;
+
+  const newToken = {
+    accessToken,
+    refreshToken: loginData.data.refresh_token,
+    accessExp: Math.floor(Date.now() / 1000) + (loginData.data.expires_in || 86400),
+  };
+  _psydoTokenCache = newToken;
+  try { await env.DASH_KV?.put(kvKey, JSON.stringify(newToken)); } catch {}
+  return accessToken;
+}
+
 async function getPsydoBalance(env) {
   const email = env.PSYDO_EMAIL;
   const password = env.PSYDO_PASSWORD;
   if (!email || !password) return null;
 
   try {
-    // 1. 登录
-    const loginRes = await fetch("https://api.psydo.top/api/v1/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!loginRes.ok) return { configured: true, status: "error", error: "login failed" };
-    const loginData = await loginRes.json();
-    const accessToken = loginData?.data?.access_token;
-    if (!accessToken) return { configured: true, status: "error", error: "no token" };
+    // 1. 获取 access_token（缓存 → refresh → 登录）
+    const accessToken = await getPsydoAccessToken(env);
+    if (!accessToken) return { configured: true, status: "error", error: "auth failed" };
 
     // 2. 查订阅额度
     const subRes = await fetch("https://api.psydo.top/api/v1/subscriptions", {
