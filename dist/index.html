@@ -286,9 +286,10 @@ function render(d) {
   const tc = d.tencent;
   const aliyun = d.aliyun;
 
-  // === 左列：CF Pages 项目 ===
+  // === 左列：CF Pages 项目（排除 dashboard 自身）===
   let leftHtml = "";
   for (const p of pages) {
+    if (p.name === "dashboard") continue;
     const h = health.find(x => x.name === p.name);
     const url = p.subdomain ? (p.subdomain.startsWith("http") ? p.subdomain : `https://${p.subdomain}`) : (p.domains[0] || "");
     const ok = h ? h.ok : null;
@@ -507,22 +508,33 @@ function render(d) {
       <div class="col-body">${rightHtml}</div>
     </div>
   `;
+
+  // 预热各项目页面（异步，不阻塞）
+  prefetchProjects(pages);
 }
 
 // === Drawer ===
 let drawerUrl = "";
 let drawerReady = false;
+const prefetchPool = {}; // url -> { iframe, loaded }
+
 function openProj(url, name) {
   if (!url) return;
-  // 手机端直接新窗口
   if (window.innerWidth <= 900) { window.open(url, "_blank"); return; }
   drawerUrl = url;
   drawerReady = false;
   document.getElementById("drawerTitle").textContent = "📄 " + name;
-  document.getElementById("drawerFrame").src = url;
+  const frame = document.getElementById("drawerFrame");
+  // 如果有预热的 iframe，直接用它的 src（浏览器缓存已热）
+  if (prefetchPool[url] && prefetchPool[url].loaded) {
+    frame.src = url; // 缓存命中，秒开
+  } else {
+    frame.src = url;
+  }
   document.getElementById("drawer").classList.add("open");
   document.getElementById("drawerOverlay").classList.add("show");
 }
+
 // SSO: iframe 加载后向子页面发密码
 function sendSSO() {
   const frame = document.getElementById("drawerFrame");
@@ -534,6 +546,39 @@ document.addEventListener("DOMContentLoaded", () => {
   const frame = document.getElementById("drawerFrame");
   if (frame) frame.addEventListener("load", () => { drawerReady = true; sendSSO(); });
 });
+
+// === 预热：后台隐藏 iframe 加载各项目 ===
+function prefetchProjects(pages) {
+  // 创建隐藏容器
+  let pool = document.getElementById("prefetchPool");
+  if (!pool) {
+    pool = document.createElement("div");
+    pool.id = "prefetchPool";
+    pool.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;";
+    document.body.appendChild(pool);
+  }
+  // 排除 dashboard 自身，只预热支持 SSO 的项目
+  const ssoProjects = pages.filter(p => p.name !== "dashboard" && (p.subdomain || p.domains[0]));
+  ssoProjects.forEach((p, i) => {
+    const url = p.subdomain ? (p.subdomain.startsWith("http") ? p.subdomain : `https://${p.subdomain}`) : (p.domains[0] || "");
+    if (!url || prefetchPool[url]) return;
+    // 延迟创建，避免同时抢带宽
+    setTimeout(() => {
+      const f = document.createElement("iframe");
+      f.src = url;
+      f.sandbox = "allow-same-origin allow-scripts allow-forms allow-popups allow-downloads";
+      f.style.cssText = "width:1px;height:1px;border:0;";
+      f.addEventListener("load", () => {
+        prefetchPool[url] = { iframe: f, loaded: true };
+        // 发 SSO 让子页面自动登录
+        if (token) f.contentWindow.postMessage({ type: "vault-sso", password: token }, "*");
+        // 预热完成后移除隐藏 iframe（浏览器已缓存）
+        setTimeout(() => { if (f.parentNode) f.parentNode.removeChild(f); }, 2000);
+      });
+      pool.appendChild(f);
+    }, 500 + i * 800); // 每个间隔 800ms，不抢主请求带宽
+  });
+}
 function closeDrawer() {
   document.getElementById("drawer").classList.remove("open");
   document.getElementById("drawerOverlay").classList.remove("show");
