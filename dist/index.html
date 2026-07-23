@@ -464,24 +464,6 @@ function render(d) {
       <div class="metric"><span class="metric-label">💾 磁盘</span><span class="metric-value" style="font-size:11px">${esc(s.disk)}</span></div>
       <div class="metric"><span class="metric-label">📡 带宽</span><span class="metric-value">${esc(s.bandwidth)}</span></div>`;
 
-    // CPU/内存使用率
-    if (s.cpuUsage !== null) {
-      rightHtml += `<div style="margin-top:8px">
-        <div class="metric-label" style="margin-bottom:2px">📊 CPU 使用率</div>
-        <div class="srv-bar"><div class="srv-bar-fill ${s.cpuUsage > 80 ? 'err' : s.cpuUsage > 60 ? 'warn' : 'ok'}" style="width:${s.cpuUsage}%"></div></div>
-        <div class="srv-bar-label"><span></span><span>${s.cpuUsage}%</span></div>
-      </div>`;
-      if (s.memUsage !== null) {
-        rightHtml += `<div style="margin-top:6px">
-          <div class="metric-label" style="margin-bottom:2px">📊 内存使用率</div>
-          <div class="srv-bar"><div class="srv-bar-fill ${s.memUsage > 80 ? 'err' : s.memUsage > 60 ? 'warn' : 'ok'}" style="width:${s.memUsage}%"></div></div>
-          <div class="srv-bar-label"><span></span><span>${s.memUsage}%</span></div>
-        </div>`;
-      }
-    } else {
-      rightHtml += `<div class="metric"><span class="metric-label">📊 CPU/内存</span><span class="metric-value warn">暂无监控</span></div>`;
-    }
-
     // 到期进度条
     rightHtml += `<div style="margin-top:8px">
       <div class="metric-label" style="margin-bottom:4px">⏰ 到期时间</div>
