@@ -205,7 +205,6 @@ async function getKimiBalance(env) {
   if (!key) return null;
 
   try {
-    // 查余额
     const [modelsRes, balanceRes] = await Promise.all([
       fetch("https://api.moonshot.cn/v1/models", { headers: { "Authorization": `Bearer ${key}` } }),
       fetch("https://api.moonshot.cn/v1/users/me/balance", { headers: { "Authorization": `Bearer ${key}` } }),
@@ -227,6 +226,71 @@ async function getKimiBalance(env) {
       status: modelsRes.ok ? "ok" : "error",
       models: (modelsData.data || []).map(m => m.id),
       balance,
+    };
+  } catch (e) {
+    return { configured: true, status: "error", error: e.message };
+  }
+}
+
+// ── 皮皮虾 AI (Psydo) 额度 ──
+async function getPsydoBalance(env) {
+  const email = env.PSYDO_EMAIL;
+  const password = env.PSYDO_PASSWORD;
+  if (!email || !password) return null;
+
+  try {
+    // 1. 登录
+    const loginRes = await fetch("https://api.psydo.top/api/v1/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    if (!loginRes.ok) return { configured: true, status: "error", error: "login failed" };
+    const loginData = await loginRes.json();
+    const accessToken = loginData?.data?.access_token;
+    if (!accessToken) return { configured: true, status: "error", error: "no token" };
+
+    // 2. 查订阅额度
+    const subRes = await fetch("https://api.psydo.top/api/v1/subscriptions", {
+      headers: { "Authorization": `Bearer ${accessToken}` },
+    });
+    const subData = await subRes.json();
+    const sub = subData?.data?.[0];
+    if (!sub) return { configured: true, status: "error", error: "no subscription" };
+
+    // 3. 查最近 usage 日志，区分文本和画图
+    let textUsage = 0;
+    let imageUsage = 0;
+    try {
+      const usageRes = await fetch("https://api.psydo.top/api/v1/usage?page=1&page_size=100", {
+        headers: { "Authorization": `Bearer ${accessToken}` },
+      });
+      const usageData = await usageRes.json();
+      const items = usageData?.data?.items || [];
+      for (const item of items) {
+        if (item.image_count > 0 || item.billing_mode === "image") {
+          imageUsage += item.actual_cost || 0;
+        } else {
+          textUsage += item.actual_cost || 0;
+        }
+      }
+    } catch {}
+
+    const limit = sub.monthly_limit_usd || 0;
+    const used = sub.monthly_usage_usd || 0;
+    return {
+      configured: true,
+      status: "ok",
+      planName: sub.plan_name || "轻享月卡",
+      monthlyLimit: limit,
+      monthlyUsed: used,
+      monthlyRemain: limit - used,
+      dailyUsed: sub.daily_usage_usd || 0,
+      weeklyUsed: sub.weekly_usage_usd || 0,
+      textUsage: textUsage,
+      imageUsage: imageUsage,
+      expiresAt: sub.expires_at,
+      overagePolicy: sub.overage_policy,
     };
   } catch (e) {
     return { configured: true, status: "error", error: e.message };
@@ -324,12 +388,13 @@ export async function onRequest(context) {
         return json({ success: true, data, cached: true });
       }
 
-      const [cfPages, usage, tencent, aliyun, kimi, weather] = await Promise.all([
+      const [cfPages, usage, tencent, aliyun, kimi, psydo, weather] = await Promise.all([
         getCFPages(env),
         getCFUsage(env),
         getTencentLighthouse(env),
         getAliyunECS(),
         getKimiBalance(env),
+        getPsydoBalance(env),
         getWeather(),
       ]);
       const pages = [...cfPages, ...getExternalSites()];
@@ -350,6 +415,7 @@ export async function onRequest(context) {
         tencent,
         aliyun,
         kimi,
+        psydo,
         weather,
         timestamp: new Date().toISOString(),
       };
