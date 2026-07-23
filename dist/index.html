@@ -123,6 +123,17 @@ body {
 /* 时间戳 */
 .ts { text-align: center; color: var(--muted); font-size: 11px; padding: 8px 0; flex-shrink: 0; }
 
+/* Drawer — 右侧滑出面板 */
+.drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 290; }
+.drawer-overlay.show { opacity: 1; pointer-events: auto; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 68%; max-width: 1100px; background: var(--bg); border-left: 1px solid var(--border); box-shadow: -8px 0 32px rgba(0,0,0,.3); transform: translateX(100%); transition: transform .3s cubic-bezier(.4,0,.2,1); z-index: 300; display: flex; flex-direction: column; }
+.drawer.open { transform: translateX(0); }
+.drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.drawer-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.drawer-actions { display: flex; gap: 8px; align-items: center; }
+.drawer-actions .btn { padding: 4px 10px; font-size: 12px; }
+.drawer-frame { flex: 1; border: 0; width: 100%; background: var(--bg2); }
+
 @media (max-width: 900px) {
   .board { grid-template-columns: 1fr; padding: 10px; gap: 0; }
   .col { display: none; }
@@ -136,6 +147,7 @@ body {
   .topbar h1 { font-size: 16px; }
   .topbar-left span:not(.live-dot) { display: none; }
   .ts { padding: 4px 0; }
+  .drawer { width: 100%; max-width: none; }
 }
 @media (min-width: 901px) { .tabs { display: none; } }
 </style>
@@ -179,16 +191,30 @@ body {
 
 <div class="toast" id="toast"></div>
 
+<!-- Drawer -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-title" id="drawerTitle">📄</div>
+    <div class="drawer-actions">
+      <button class="btn" onclick="reloadDrawer()">🔄 刷新</button>
+      <button class="btn" onclick="openDrawerNewTab()">↗️ 新窗口</button>
+      <button class="btn" onclick="closeDrawer()">✕ 关闭</button>
+    </div>
+  </div>
+  <iframe class="drawer-frame" id="drawerFrame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-downloads"></iframe>
+</div>
+
 <script>
 let token = localStorage.getItem("dash_token") || "";
 
 // 项目中文名映射
 const CN_NAMES = {
   "dashboard": "工作中心看板",
-  "md-editor": "Markdown 编辑器",
-  "memos-dd": "备忘录",
+  "md-editor": "Typora",
+  "memos-dd": "memos",
   "bookmarks": "书签管理",
-  "mteam-demo": "M-Team 下载",
+  "mteam-demo": "M-Team",
   "qdii-quota": "QDII 额度",
 };
 
@@ -259,7 +285,6 @@ function render(d) {
   const u = d.cfUsage || {};
   const tc = d.tencent;
   const aliyun = d.aliyun;
-  const kimi = d.kimi;
 
   // === 左列：CF Pages 项目 ===
   let leftHtml = "";
@@ -269,7 +294,7 @@ function render(d) {
     const ok = h ? h.ok : null;
     const ms = h ? h.ms : null;
     const cardClass = ok === true ? "ok" : ok === false ? "err" : "";
-    leftHtml += `<div class="card proj-card ${cardClass}" onclick="window.open('${url}','_blank')">
+    leftHtml += `<div class="card proj-card ${cardClass}" onclick="openProj('${url}','${esc(CN_NAMES[p.name] || p.name)}')">
       <div class="proj-top">
         <span class="proj-icon">${ok === true ? '🟢' : ok === false ? '🔴' : '⚪️'}</span>
         <span class="proj-cn">${esc(CN_NAMES[p.name] || p.name)}</span>
@@ -419,23 +444,6 @@ function render(d) {
     </div>
   </div>`;
 
-  // Kimi
-  if (kimi && kimi.configured) {
-    midHtml += `<div class="mid-card">
-      <div class="mid-card-title">🌙 Kimi ${kimi.status === 'ok' ? '<span class="dot ok"></span>' : '<span class="dot err"></span>'}</div>
-      <div class="metric"><span class="metric-label">状态</span><span class="metric-value ${kimi.status === 'ok' ? 'ok' : 'err'}">${kimi.status === 'ok' ? '正常' : '异常'}</span></div>
-      <div class="metric"><span class="metric-label">模型数</span><span class="metric-value">${(kimi.models || []).length}</span></div>`;
-    if (kimi.balance) {
-      midHtml += `<div class="metric"><span class="metric-label">💰 可用余额</span><span class="metric-value ok">¥${kimi.balance.available.toFixed(2)}</span></div>
-      <div class="metric"><span class="metric-label">💵 现金余额</span><span class="metric-value">¥${kimi.balance.cash.toFixed(2)}</span></div>
-      <div class="metric"><span class="metric-label">🎫 代金券</span><span class="metric-value">¥${kimi.balance.voucher.toFixed(2)}</span></div>`;
-    }
-    if (kimi.models) {
-      midHtml += `<div class="model-tags">${kimi.models.map(m => `<span class="model-tag">${m}</span>`).join('')}</div>`;
-    }
-    midHtml += `</div>`;
-  }
-
   midHtml += `</div>`;
 
   // === 右列：服务器 ===
@@ -500,6 +508,45 @@ function render(d) {
     </div>
   `;
 }
+
+// === Drawer ===
+let drawerUrl = "";
+let drawerReady = false;
+function openProj(url, name) {
+  if (!url) return;
+  // 手机端直接新窗口
+  if (window.innerWidth <= 900) { window.open(url, "_blank"); return; }
+  drawerUrl = url;
+  drawerReady = false;
+  document.getElementById("drawerTitle").textContent = "📄 " + name;
+  document.getElementById("drawerFrame").src = url;
+  document.getElementById("drawer").classList.add("open");
+  document.getElementById("drawerOverlay").classList.add("show");
+}
+// SSO: iframe 加载后向子页面发密码
+function sendSSO() {
+  const frame = document.getElementById("drawerFrame");
+  if (frame && frame.contentWindow && token) {
+    frame.contentWindow.postMessage({ type: "vault-sso", password: token }, "*");
+  }
+}
+document.addEventListener("DOMContentLoaded", () => {
+  const frame = document.getElementById("drawerFrame");
+  if (frame) frame.addEventListener("load", () => { drawerReady = true; sendSSO(); });
+});
+function closeDrawer() {
+  document.getElementById("drawer").classList.remove("open");
+  document.getElementById("drawerOverlay").classList.remove("show");
+  setTimeout(() => { document.getElementById("drawerFrame").src = ""; }, 300);
+}
+function reloadDrawer() {
+  if (drawerUrl) document.getElementById("drawerFrame").src = drawerUrl;
+}
+function openDrawerNewTab() {
+  if (drawerUrl) window.open(drawerUrl, "_blank");
+}
+// ESC 关闭
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
 
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
